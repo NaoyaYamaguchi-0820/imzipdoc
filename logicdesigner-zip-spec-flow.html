@@ -35,7 +35,6 @@
         <li><a href="#s16">生成・変更時の注意</a></li>
         <li><a href="#s17">対象範囲・未網羅事項</a></li>
         <li><a href="#s18">新規ZIP生成手順（実践ガイド）</a></li>
-        <li><a href="#s19">設計書エクスポート（Excel）とZIPの対応</a></li>
       </ol>
       <p class="mb-0 mt-2 small text-secondary">ユーザ定義タスク登録ZIP・ルーティング定義ZIPは別ファイル（冒頭の案内を参照）</p>
     </div>
@@ -809,36 +808,6 @@
     </ul>
   </div>
 
-  <h2 class="h3 mt-4" id="s19">19. 設計書エクスポート（Excel）とZIPの対応</h2>
-  <p>IM-LogicDesignerの画面には、本書が対象とするZIPエクスポートとは別に、フロー1件を人間可読な形式でまとめた「設計書」をExcel（.xlsx）としてエクスポートする機能がある。業務で使用する設計書からこのExcel設計書へ情報を転記し、そのExcel設計書をもとにZIP（<code>flow_definition.json</code>）を組み立てる、という流れを想定する場合、両者の対応関係を把握しておく必要がある。本章は、Excel設計書とZIPの実データを突き合わせた対応関係をまとめる。</p>
-
-  <h3 class="h4 mt-4">19.1 シートとZIP側項目の対応表</h3>
-  <table class="table table-bordered table-striped align-middle">
-    <thead><tr><th>Excelシート</th><th>対応するZIP側の項目</th><th>備考</th></tr></thead>
-    <tbody>
-      <tr><td>表紙</td><td>（対応なし）</td><td>タイトルページのみ。ZIP側に対応する項目はない</td></tr>
-      <tr><td>フロー概要</td><td>フロー定義オブジェクトの直下項目（6章）</td><td>「フロー定義ID」→<code>flowId</code>、「フロー定義名」→<code>flowName</code>、「バージョン」→<code>version</code>、「備考」→<code>notes</code>、「フローカテゴリID/名」→<code>categoryId</code>（および対応する<code>flowCategories</code>要素の<code>categoryName</code>）、「フロー定義名(多言語情報)」→<code>localizes</code>、「トランザクションの使用」→<code>transaction</code>、「IM-Repository 定義の入力値の検証」→<code>validateRepositoryData</code>。<strong>「作成者」「作成日時」「更新者」「更新日時」はZIP側の<code>flow_definition.json</code>には存在しない</strong>（6章）</td></tr>
-      <tr><td>フロー図</td><td><code>flow_diagram/&lt;flowId&gt;-&lt;version&gt;.png</code></td><td>デザイナ上のフロー図（2章・14章）に対応</td></tr>
-      <tr><td>入出力値</td><td><code>inputDataDefinition</code> / <code>outputDataDefinition</code></td><td>ツリー表記（<code>┠</code>/<code>┗</code>）の階層が<code>typeDefinitions</code>のネストに対応。<code>&lt;object&gt;</code>は複合型（<code>basic:false</code>）、<code>&lt;object[]&gt;</code>は複合型かつ<code>listingType:"list"</code>、<code>&lt;string&gt;</code>等の基本型名は<code>typeId</code>にそのまま対応（9章）</td></tr>
-      <tr><td>変数</td><td><code>variablesDataDefinition</code></td><td>入出力値シートと同形式。「変数名」「説明」は<code>properties[].name</code>・<code>properties[].description</code>に対応</td></tr>
-      <tr><td>定数値</td><td><code>constants</code></td><td>「定数ID」→<code>name</code>、「定数値」→<code>value</code>、「データ型」→<code>typeId</code>、「共通定数」→<code>common</code>、「説明」→<code>description</code>（8章と1対1で対応）</td></tr>
-      <tr><td>エレメント一覧</td><td><code>flowElements</code></td><td>「タスクID」→<code>executeId</code>、「エイリアス」→<code>alias</code>、「ラベル」→<code>label</code>、「タスク種別」→<code>key.id</code>に相当する種別の日本語表示名、「コメント」→<code>comment</code>。「マッピング: あり/なし」は<code>mappingDefinition.mappingRules</code>が空か否かの表示、「例外処理」は<code>continueOnError</code>等の設定有無、「固有設定」は<code>properties</code>内の値（ループ回数・条件式等）をテキスト化したもの（10章・15章）</td></tr>
-      <tr><td>データマッピング</td><td><code>flowElements[].mappingDefinition.mappingRules</code></td><td>「対象」→<code>target</code>、「入力データ」→<code>source.path</code>（11章）。<strong>このシートは<code>source.type:"value"</code>（単純参照）のみを表形式で表示しており、<code>source.type:"function"</code>（関数呼び出し・ネスト式）を含むマッピングをこの表だけから機械的に再構築できるかは未確認</strong>。関数を使うマッピングがある場合は、Excel設計書の別途の記載（本サンプルには該当なし）や元の業務設計書側の情報を合わせて参照する必要がある可能性が高い</td></tr>
-      <tr><td>関連（呼び出し元／呼び出し先）</td><td>（間接対応）<code>im_callFlow</code>要素の<code>properties.flowId</code></td><td>ZIP側では個々のフローが「どこから呼ばれるか」を持たず、呼び出し元情報はテナント内の全フローを横断的に解析しないと得られない（<code>im_callFlow</code>を持つ他フローを探す必要がある）。設計書側はエクスポート時点で解決済みの参照一覧を表示していると考えられる</td></tr>
-      <tr><td>REST API定義／REST API レスポンスヘッダ</td><td><code>flow_route.json</code>の各エントリ</td><td><code>flow_definition.json</code>にはフローの呼び出し方法（ルーティング・認証方式等）は一切含まれない（17章）。この設計書の内容は、独立したZIP形式（<code>flow_route.json</code>）に対応する。詳細は<a href="logicdesigner-zip-spec-route.html">ルーティング定義編</a>を参照</td></tr>
-      <tr><td>トリガ定義／トリガマッピング</td><td>（ZIP外）</td><td>本サンプルでは空欄だが、項目自体はテンプレートとして存在する。REST API定義と同様、ZIP外で管理される起動設定に対応すると考えられる（17章）</td></tr>
-      <tr><td>ユーザ定義（概要／入出力値／SQL定義）</td><td><code>flowElements[].key.type: "userDefinition"</code>が参照する定義本体、または<code>localUserDefinition.properties.definition</code></td><td>「利用範囲: 共通のユーザ定義として利用する」という記載は、<code>key.type: "userDefinition"</code>（テナント共有・ZIP外管理、10.4節）に対応すると考えられる。「ユーザ定義ID/名/バージョン/カテゴリID/カテゴリ名/ソート番号」は<code>properties.definition</code>の同名項目（<code>definitionId</code>/<code>definitionName</code>/<code>version</code>/<code>categoryId</code>/<code>sortNumber</code>、10.5節）と1対1。「ユーザ定義種別: sql」は<code>definitionType</code>に対応。「SQL定義」内の「データベース種別」「接続ID」「クエリ種別」「範囲指定」「クエリ」は、それぞれ<code>definitionData.elementProperties</code>の<code>databaseType</code>・<code>connectId</code>・<code>queryType</code>・<code>limitation</code>・<code>query</code>に対応（10.5節参照）。「作成者」「作成日時」「更新者」「更新日時」は、フロー概要シートと同様にZIP側には存在しない</td></tr>
-    </tbody>
-  </table>
-
-  <h3 class="h4 mt-4">19.2 Excel設計書からZIPを組み立てる際の注意</h3>
-  <ul>
-    <li>Excel設計書には作成者・作成日時・更新者・更新日時などの管理情報が含まれるが、これらはZIP側のスキーマに存在しないため、ZIP組み立て時は単純に無視してよい。</li>
-    <li>「データマッピング」シートは単純な値参照（<code>source.type:"value"</code>）を表形式で網羅する設計になっているとみられ、関数呼び出し（<code>im_string_concat</code>等、11.5節）を伴う複雑な式がある場合、この表だけでは再現しきれない可能性がある。複雑な式が必要な要素は、元の業務設計書や補足情報を別途確認する。</li>
-    <li>REST API定義はフロー本体のZIP（<code>flow_definition.json</code>）の対象外である。Excel設計書のこの記載は、別ファイル（<a href="logicdesigner-zip-spec-route.html">ルーティング定義編</a>）が扱う<code>flow_route.json</code>側に反映する。トリガ定義は、対応するZIP形式が確認できていないため、ZIP生成の観点では読み飛ばしてよい項目である。</li>
-    <li>「ユーザ定義」シートが「共通のユーザ定義として利用する」となっている場合、そのタスクはテナントに個別登録されたユーザ定義（<code>key.type:"userDefinition"</code>）として扱われ、ZIP側の該当<code>flowElements</code>要素は定義本体を持たず<code>key.id</code>で参照するのみになる（10.4節）。ZIP生成時に定義本体（SQL文等）をどこまで埋め込む必要があるか（<code>localUserDefinition</code>化するか、テナント側に登録済みの<code>userDefinition</code>として参照だけにするか）は、対象タスクの利用範囲の記載に従って判断する。</li>
-    <li>シート構成や項目名はテンプレートの版によって異なる可能性があるため、実際に使用するExcel設計書と齟齬がないか都度確認する。</li>
-  </ul>
 
 </main>
 </body>

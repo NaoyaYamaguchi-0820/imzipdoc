@@ -10,7 +10,7 @@
 <main class="container py-4 py-md-5">
   <h1 class="mb-3">IM-LogicDesigner ZIP仕様 - ルーティング定義編</h1>
   <p class="text-secondary">更新日: 2026-08-11</p>
-  <p>本書は、フロー定義ZIP（<a href="logicdesigner-zip-spec-flow.html">logicdesigner-zip-spec-flow.html</a>）・ユーザ定義タスク登録ZIP（<a href="logicdesigner-zip-spec-userdef.html">logicdesigner-zip-spec-userdef.html</a>）と並ぶ第三のエクスポート形式、REST APIルーティング定義（<code>flow_route.json</code>）を対象とする。フローをREST APIとして外部公開する際のルーティング設定（19章の「REST API定義」シートに相当する内容）は、フロー本体のZIPには含まれず、この独立したZIP形式で管理される。</p>
+  <p>本書は、フロー定義ZIP（<a href="logicdesigner-zip-spec-flow.html">logicdesigner-zip-spec-flow.html</a>）・ユーザ定義タスク登録ZIP（<a href="logicdesigner-zip-spec-userdef.html">logicdesigner-zip-spec-userdef.html</a>）と並ぶ第三のエクスポート形式、REST APIルーティング定義（<code>flow_route.json</code>）を対象とする。フローをREST APIとして外部公開する際のルーティング設定は、フロー本体のZIPには含まれず、この独立したZIP形式で管理される。</p>
 
   <div class="card mb-4 toc">
     <div class="card-body">
@@ -20,16 +20,14 @@
         <li><a href="#s2">ZIP構造</a></li>
         <li><a href="#s3">トップレベル構造（配列）</a></li>
         <li><a href="#s4">エントリの項目</a></li>
-        <li><a href="#s5">Excel設計書との対応</a></li>
-        <li><a href="#s6">新規生成時の注意</a></li>
-        <li><a href="#s7">未検証事項</a></li>
+        <li><a href="#s5">新規生成時の注意</a></li>
+        <li><a href="#s6">未検証事項</a></li>
       </ol>
     </div>
   </div>
 
   <h2 class="h3 mt-4" id="s1">1. 概要</h2>
-  <p>LogicDesignerで作成したフローをREST APIのエンドポイントとして公開する設定（ルーティングパス・HTTPメソッド・認証方式など）は、フロー画面からエクスポートする<code>flow_definition.json</code>形式のZIP（フロー定義編1〜19章）には一切含まれない。この設定は、<code>flow_route.json</code>という別形式のZIPとして個別にエクスポート・登録される。</p>
-  <p>この対応関係は、フロー定義編の19章（Excel設計書とZIPの対応）で扱った「REST API定義」シートの内容が、フロー本体のZIPではなく本書が対象とする<code>flow_route.json</code>側に反映される、という形で裏付けられる。</p>
+  <p>LogicDesignerで作成したフローをREST APIのエンドポイントとして公開する設定（ルーティングパス・HTTPメソッド・認証方式など）は、フロー画面からエクスポートする<code>flow_definition.json</code>形式のZIP（フロー定義編1〜18章）には一切含まれない。この設定は、<code>flow_route.json</code>という別形式のZIPとして個別にエクスポート・登録される。</p>
 
   <h2 class="h3 mt-4" id="s2">2. ZIP構造</h2>
   <pre class="bg-white border rounded p-3">&lt;route-export&gt;.zip
@@ -68,36 +66,20 @@
   <table class="table table-bordered table-striped align-middle">
     <thead><tr><th>項目</th><th>型・例</th><th>説明</th></tr></thead>
     <tbody>
-      <tr><td><code>route</code></td><td>文字列</td><td>ルーティングパス。REST APIのURLの一部になる（フロー定義編19.1節の「ルーティング」に相当）</td></tr>
+      <tr><td><code>route</code></td><td>文字列</td><td>ルーティングパス。REST APIのURLの一部になる</td></tr>
       <tr><td><code>method</code></td><td>文字列</td><td>HTTPメソッド。公式ドキュメントによると<code>GET</code>・<code>POST</code>・<code>PUT</code>・<code>DELETE</code>が利用できる</td></tr>
       <tr><td><code>flowId</code></td><td>文字列</td><td>このルーティングが呼び出す対象フローの<code>flowId</code>（フロー定義編6章参照）</td></tr>
       <tr><td><code>version</code></td><td>数値</td><td>対象フローのバージョン。存在する具体的なバージョン番号、または最新バージョンを表す<code>-1</code>を指定できる</td></tr>
       <tr><td><code>authentication</code></td><td>文字列</td><td>認証方式。公式ドキュメントによると3種類存在する。<code>IMAuthentication</code>（特別な認証処理を行わず、現在のCookieに紐づくセッションの認証状態のままロジックフローを実行する）、Basic認証（ユーザ名・パスワードで認証。マルチテナント環境では「ユーザコード」または「テナントID\ユーザコード」を指定可能）、OAuth（リクエストヘッダに<code>Authorization: Bearer &lt;access_token&gt;</code>を付与して認証）</td></tr>
       <tr><td><code>authenticationParam</code></td><td>文字列または<code>null</code></td><td>認証方式に応じた追加パラメータ。<code>IMAuthentication</code>では<code>null</code>。Basic認証・OAuthの場合に指定する値の形式は未確認</td></tr>
-      <tr><td><code>authzUri</code></td><td>文字列</td><td>認可URI。<code>im-logic-rest://&lt;route&gt;</code>形式。フロー定義編19.1節の「認可URI」に相当</td></tr>
+      <tr><td><code>authzUri</code></td><td>文字列</td><td>認可URI。<code>im-logic-rest://&lt;route&gt;</code>形式</td></tr>
       <tr><td><code>secured</code></td><td>真偽値</td><td>セキュアトークンを使用するか。有効にすると、リクエストヘッダ<code>X-Intramart-Secure-Token</code>またはリクエストパラメータ<code>im_secure_token</code>によるトークンチェックが行われる。トークンは同一セッション内で発行・使用する必要がある</td></tr>
       <tr><td><code>responseType</code></td><td>文字列</td><td>レスポンスの変換方式。公式ドキュメントによると9種類存在する: JSON変換（内部識別子<code>imJsonResponse</code>を確認済み）、テキスト（出力データの<code>body</code>プロパティ値をそのまま返す）、HTML、XML、JSON文字列、任意Content-Type、ファイルダウンロード、ファイルインライン表示、ファイルバイナリ返却。<code>imJsonResponse</code>以外の内部識別子は未確認</td></tr>
-      <tr><td><code>responseHeader</code></td><td>オブジェクト</td><td>レスポンスヘッダのキー・値。フロー定義編19.1節の「REST API レスポンスヘッダ」シートに相当。<code>Content-Type</code>は、出力データ側のプロパティまたはこの<code>responseHeader</code>で指定でき、いずれも未指定の場合は<code>application/octet-stream</code>が適用される。サンプルでは空オブジェクト</td></tr>
+      <tr><td><code>responseHeader</code></td><td>オブジェクト</td><td>レスポンスヘッダのキー・値。<code>Content-Type</code>は、出力データ側のプロパティまたはこの<code>responseHeader</code>で指定でき、いずれも未指定の場合は<code>application/octet-stream</code>が適用される。サンプルでは空オブジェクト</td></tr>
     </tbody>
   </table>
 
-  <h2 class="h3 mt-4" id="s5">5. Excel設計書との対応</h2>
-  <p>フロー定義編19.1節で扱った、Excel設計書の「REST API定義」「REST API レスポンスヘッダ」シートは、本ZIP（<code>flow_route.json</code>）の内容に対応する。</p>
-  <table class="table table-bordered table-striped align-middle">
-    <thead><tr><th>Excelシート項目</th><th>対応する<code>flow_route.json</code>側の項目</th></tr></thead>
-    <tbody>
-      <tr><td>ルーティング</td><td><code>route</code></td></tr>
-      <tr><td>メソッド</td><td><code>method</code></td></tr>
-      <tr><td>認証方法</td><td><code>authentication</code></td></tr>
-      <tr><td>認可URI</td><td><code>authzUri</code></td></tr>
-      <tr><td>セキュアトークンの使用</td><td><code>secured</code></td></tr>
-      <tr><td>レスポンス種別</td><td><code>responseType</code></td></tr>
-      <tr><td>レスポンスヘッダ名／値</td><td><code>responseHeader</code></td></tr>
-    </tbody>
-  </table>
-  <p>Excel設計書側には現れない項目として、<code>flowId</code>・<code>version</code>・<code>authenticationParam</code>がある。これらはExcel設計書の「フロー概要」シート（対象フロー自体の識別情報）や、認証方式の詳細設定から補う必要がある。</p>
-
-  <h2 class="h3 mt-4" id="s6">6. 新規生成時の注意</h2>
+  <h2 class="h3 mt-4" id="s5">5. 新規生成時の注意</h2>
   <ul>
     <li><code>flowId</code>は、対応する<code>flow_definition.json</code>側のフローの<code>flowId</code>と一致させる。フロー本体とルーティング設定は別々のZIPで管理されるため、生成時にこの対応関係が崩れないよう注意する。</li>
     <li>トップレベルは配列であり、<code>flowCategories</code>/<code>flowDefinitions</code>のようなラッパーオブジェクトを持たない。</li>
@@ -107,7 +89,7 @@
     <li><code>secured: true</code>にする場合は、呼び出し側が<code>X-Intramart-Secure-Token</code>ヘッダまたは<code>im_secure_token</code>パラメータでトークンを送信できるように、あわせて設計する。</li>
   </ul>
 
-  <h2 class="h3 mt-4" id="s7">7. 未検証事項</h2>
+  <h2 class="h3 mt-4" id="s6">6. 未検証事項</h2>
   <ul>
     <li>同一<code>flowId</code>に対する複数ルーティング（メソッド違い等）の登録可否。</li>
     <li>Basic認証・OAuthを指定した場合の<code>authenticationParam</code>の具体的な形式。</li>
