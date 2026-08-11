@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IM-LogicDesigner ZIP仕様 - ルーティング定義編</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<main class="container py-4 py-md-5">
+  <h1 class="mb-3">IM-LogicDesigner ZIP仕様 - ルーティング定義編</h1>
+  <p class="text-secondary">更新日: 2026-08-11</p>
+  <p>本書は、フロー定義ZIP（<a href="logicdesigner-zip-spec-flow.html">logicdesigner-zip-spec-flow.html</a>）・ユーザ定義タスク登録ZIP（<a href="logicdesigner-zip-spec-userdef.html">logicdesigner-zip-spec-userdef.html</a>）と並ぶ第三のエクスポート形式、REST APIルーティング定義（<code>flow_route.json</code>）を対象とする。フローをREST APIとして外部公開する際のルーティング設定（19章の「REST API定義」シートに相当する内容）は、フロー本体のZIPには含まれず、この独立したZIP形式で管理される。</p>
+
+  <div class="card mb-4 toc">
+    <div class="card-body">
+      <strong>目次</strong>
+      <ol class="mb-0">
+        <li><a href="#s1">概要</a></li>
+        <li><a href="#s2">ZIP構造</a></li>
+        <li><a href="#s3">トップレベル構造（配列）</a></li>
+        <li><a href="#s4">エントリの項目</a></li>
+        <li><a href="#s5">Excel設計書との対応</a></li>
+        <li><a href="#s6">新規生成時の注意</a></li>
+        <li><a href="#s7">未検証事項</a></li>
+      </ol>
+    </div>
+  </div>
+
+  <h2 class="h3 mt-4" id="s1">1. 概要</h2>
+  <p>LogicDesignerで作成したフローをREST APIのエンドポイントとして公開する設定（ルーティングパス・HTTPメソッド・認証方式など）は、フロー画面からエクスポートする<code>flow_definition.json</code>形式のZIP（フロー定義編1〜19章）には一切含まれない。この設定は、<code>flow_route.json</code>という別形式のZIPとして個別にエクスポート・登録される。</p>
+  <p>この対応関係は、フロー定義編の19章（Excel設計書とZIPの対応）で扱った「REST API定義」シートの内容が、フロー本体のZIPではなく本書が対象とする<code>flow_route.json</code>側に反映される、という形で裏付けられる。</p>
+
+  <h2 class="h3 mt-4" id="s2">2. ZIP構造</h2>
+  <pre class="bg-white border rounded p-3">&lt;route-export&gt;.zip
+└── flow_route.json</pre>
+  <p>本書が対象とするサンプルは<code>flow_route.json</code>1ファイルのみで構成されている。公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/import_export/index.html">「4.5. インポート・エクスポート」</a>によると、IM-LogicDesignerのエクスポート機能は本来、フロー定義・ユーザ定義・ルーティング定義を含む全データを一括で1つのZIPにまとめて出力するものであり、その場合のZIP構成は次のとおりとなる。</p>
+  <pre class="bg-white border rounded p-3">&lt;export&gt;.zip
+├── flow_definition.json
+├── flow_diagram/
+│   └── &lt;flowId&gt;-&lt;version&gt;.png
+├── user_definition.json
+├── icon_data/
+│   ├── designer/&lt;iconId&gt;
+│   └── palette/&lt;iconId&gt;
+└── flow_route.json</pre>
+  <p>本書のサンプルのように<code>flow_route.json</code>単体（あるいは<a href="logicdesigner-zip-spec-flow.html">フロー定義編</a>・<a href="logicdesigner-zip-spec-userdef.html">ユーザ定義編</a>で扱った各サンプルのように他の1形式単体）で構成されたZIPも有効なエクスポート・インポート対象である。全体エクスポートと個別エクスポートのいずれの粒度でも、各JSONファイル自体の内部構造（本書が扱う<code>flow_route.json</code>の中身）は変わらないと考えられる。</p>
+
+  <h2 class="h3 mt-4" id="s3">3. トップレベル構造（配列）</h2>
+  <p><code>flow_definition.json</code>・<code>user_definition.json</code>とは異なり、トップレベルはオブジェクトではなく<strong>配列</strong>である。二重JSONエンコードも行われていない（配列要素は最初からJSONオブジェクトであり、文字列化されていない）。</p>
+  <pre class="bg-white border rounded p-3">[
+  {
+    "route": "sample_route",
+    "method": "GET",
+    "flowId": "sample",
+    "version": -1,
+    "authentication": "IMAuthentication",
+    "authenticationParam": null,
+    "authzUri": "im-logic-rest://sample_route",
+    "secured": false,
+    "responseType": "imJsonResponse",
+    "responseHeader": {}
+  }
+]</pre>
+  <p>配列の各要素が、1つのルーティング設定（1つのフロー×HTTPメソッドの組み合わせを外部公開する設定）に対応する。同一<code>flowId</code>に対して、メソッド違いで複数のルーティングを定義することもできると見られる（未検証）。</p>
+
+  <h2 class="h3 mt-4" id="s4">4. エントリの項目</h2>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>項目</th><th>型・例</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>route</code></td><td>文字列</td><td>ルーティングパス。REST APIのURLの一部になる（フロー定義編19.1節の「ルーティング」に相当）</td></tr>
+      <tr><td><code>method</code></td><td>文字列</td><td>HTTPメソッド。公式ドキュメントによると<code>GET</code>・<code>POST</code>・<code>PUT</code>・<code>DELETE</code>が利用できる</td></tr>
+      <tr><td><code>flowId</code></td><td>文字列</td><td>このルーティングが呼び出す対象フローの<code>flowId</code>（フロー定義編6章参照）</td></tr>
+      <tr><td><code>version</code></td><td>数値</td><td>対象フローのバージョン。存在する具体的なバージョン番号、または最新バージョンを表す<code>-1</code>を指定できる</td></tr>
+      <tr><td><code>authentication</code></td><td>文字列</td><td>認証方式。公式ドキュメントによると3種類存在する。<code>IMAuthentication</code>（特別な認証処理を行わず、現在のCookieに紐づくセッションの認証状態のままロジックフローを実行する）、Basic認証（ユーザ名・パスワードで認証。マルチテナント環境では「ユーザコード」または「テナントID\ユーザコード」を指定可能）、OAuth（リクエストヘッダに<code>Authorization: Bearer &lt;access_token&gt;</code>を付与して認証）</td></tr>
+      <tr><td><code>authenticationParam</code></td><td>文字列または<code>null</code></td><td>認証方式に応じた追加パラメータ。<code>IMAuthentication</code>では<code>null</code>。Basic認証・OAuthの場合に指定する値の形式は未確認</td></tr>
+      <tr><td><code>authzUri</code></td><td>文字列</td><td>認可URI。<code>im-logic-rest://&lt;route&gt;</code>形式。フロー定義編19.1節の「認可URI」に相当</td></tr>
+      <tr><td><code>secured</code></td><td>真偽値</td><td>セキュアトークンを使用するか。有効にすると、リクエストヘッダ<code>X-Intramart-Secure-Token</code>またはリクエストパラメータ<code>im_secure_token</code>によるトークンチェックが行われる。トークンは同一セッション内で発行・使用する必要がある</td></tr>
+      <tr><td><code>responseType</code></td><td>文字列</td><td>レスポンスの変換方式。公式ドキュメントによると9種類存在する: JSON変換（内部識別子<code>imJsonResponse</code>を確認済み）、テキスト（出力データの<code>body</code>プロパティ値をそのまま返す）、HTML、XML、JSON文字列、任意Content-Type、ファイルダウンロード、ファイルインライン表示、ファイルバイナリ返却。<code>imJsonResponse</code>以外の内部識別子は未確認</td></tr>
+      <tr><td><code>responseHeader</code></td><td>オブジェクト</td><td>レスポンスヘッダのキー・値。フロー定義編19.1節の「REST API レスポンスヘッダ」シートに相当。<code>Content-Type</code>は、出力データ側のプロパティまたはこの<code>responseHeader</code>で指定でき、いずれも未指定の場合は<code>application/octet-stream</code>が適用される。サンプルでは空オブジェクト</td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="h3 mt-4" id="s5">5. Excel設計書との対応</h2>
+  <p>フロー定義編19.1節で扱った、Excel設計書の「REST API定義」「REST API レスポンスヘッダ」シートは、本ZIP（<code>flow_route.json</code>）の内容に対応する。</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>Excelシート項目</th><th>対応する<code>flow_route.json</code>側の項目</th></tr></thead>
+    <tbody>
+      <tr><td>ルーティング</td><td><code>route</code></td></tr>
+      <tr><td>メソッド</td><td><code>method</code></td></tr>
+      <tr><td>認証方法</td><td><code>authentication</code></td></tr>
+      <tr><td>認可URI</td><td><code>authzUri</code></td></tr>
+      <tr><td>セキュアトークンの使用</td><td><code>secured</code></td></tr>
+      <tr><td>レスポンス種別</td><td><code>responseType</code></td></tr>
+      <tr><td>レスポンスヘッダ名／値</td><td><code>responseHeader</code></td></tr>
+    </tbody>
+  </table>
+  <p>Excel設計書側には現れない項目として、<code>flowId</code>・<code>version</code>・<code>authenticationParam</code>がある。これらはExcel設計書の「フロー概要」シート（対象フロー自体の識別情報）や、認証方式の詳細設定から補う必要がある。</p>
+
+  <h2 class="h3 mt-4" id="s6">6. 新規生成時の注意</h2>
+  <ul>
+    <li><code>flowId</code>は、対応する<code>flow_definition.json</code>側のフローの<code>flowId</code>と一致させる。フロー本体とルーティング設定は別々のZIPで管理されるため、生成時にこの対応関係が崩れないよう注意する。</li>
+    <li>トップレベルは配列であり、<code>flowCategories</code>/<code>flowDefinitions</code>のようなラッパーオブジェクトを持たない。</li>
+    <li>二重JSONエンコードは不要（配列要素はそのままJSONオブジェクトとして記述する）。</li>
+    <li><code>route</code>の命名規則（使用可能文字、同一ルートの重複可否）は利用環境の制約を確認する。</li>
+    <li>特定バージョンに固定する必要がない限り、<code>version</code>は<code>-1</code>（最新バージョン）を指定しておくと、フロー側のバージョンを更新してもルーティング側の修正が不要になる。</li>
+    <li><code>secured: true</code>にする場合は、呼び出し側が<code>X-Intramart-Secure-Token</code>ヘッダまたは<code>im_secure_token</code>パラメータでトークンを送信できるように、あわせて設計する。</li>
+  </ul>
+
+  <h2 class="h3 mt-4" id="s7">7. 未検証事項</h2>
+  <ul>
+    <li>同一<code>flowId</code>に対する複数ルーティング（メソッド違い等）の登録可否。</li>
+    <li>Basic認証・OAuthを指定した場合の<code>authenticationParam</code>の具体的な形式。</li>
+    <li><code>imJsonResponse</code>以外の8種類の<code>responseType</code>の内部識別子文字列。</li>
+    <li><code>responseHeader</code>に値を設定した場合の具体的な構造（キー・値のペアか、それ以上の入れ子構造を持つか）。</li>
+    <li>本ZIPに複数のルーティングエントリを含めた場合の挙動（一括登録されるか、1件ずつの扱いか）。</li>
+    <li><code>icon_data/</code>（2章）の具体的な内部構造（ファイル形式、<code>iconId</code>とユーザ定義側の対応関係）。</li>
+  </ul>
+
+</main>
+</body>
+</html>

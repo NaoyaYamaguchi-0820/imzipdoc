@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IM-LogicDesigner ZIP仕様 - フロー定義編</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<main class="container py-4 py-md-5">
+  <h1 class="mb-3">IM-LogicDesigner ZIP仕様 - フロー定義編</h1>
+  <p class="text-secondary">更新日: 2026-08-11</p>
+  <p>本書では、IM-LogicDesignerのエクスポートZIPに含まれるデータの構成と、各データの役割を網羅的に説明する。ファイル構成や項目は、製品バージョン、エクスポート対象、フローの内容によって異なる場合がある。</p>
+  <p>本書はフロー定義ZIP（<code>flow_definition.json</code>）を対象とする。関連する別形式のZIPは別ファイルにまとめている。ユーザ定義タスク登録ZIP（<code>user_definition.json</code>）は<a href="logicdesigner-zip-spec-userdef.html">logicdesigner-zip-spec-userdef.html</a>（ユーザ定義編）、REST APIルーティング定義ZIP（<code>flow_route.json</code>）は<a href="logicdesigner-zip-spec-route.html">logicdesigner-zip-spec-route.html</a>（ルーティング定義編）、IM-Copilot連携やスケジュール実行トリガ等は<a href="logicdesigner-zip-spec-related.html">logicdesigner-zip-spec-related.html</a>（関連機能編）を参照。</p>
+
+  <div class="card mb-4 toc">
+    <div class="card-body">
+      <strong>目次</strong>
+      <ol class="mb-0">
+        <li><a href="#s1">概要</a></li>
+        <li><a href="#s2">ZIP構造</a></li>
+        <li><a href="#s3">flow_definition.json のトップレベル構造</a></li>
+        <li><a href="#s4">flowCategories（フローカテゴリ）</a></li>
+        <li><a href="#s5">flowDefinitions と二重JSON構造</a></li>
+        <li><a href="#s6">フロー定義オブジェクトの項目一覧</a></li>
+        <li><a href="#s7">localizes（国際化情報）</a></li>
+        <li><a href="#s8">constants（定数定義）</a></li>
+        <li><a href="#s9">データ定義（入力・出力・変数）</a></li>
+        <li><a href="#s10">flowElements（フロー要素）</a></li>
+        <li><a href="#s11">mappingDefinition（マッピング定義）</a></li>
+        <li><a href="#s12">additional.ui（デザイナ表示情報）</a></li>
+        <li><a href="#s13">複数フロー・バージョンの格納</a></li>
+        <li><a href="#s14">フロー図（flow_diagram）との対応</a></li>
+        <li><a href="#s15">標準フロー要素 早見表</a></li>
+        <li><a href="#s16">生成・変更時の注意</a></li>
+        <li><a href="#s17">対象範囲・未網羅事項</a></li>
+        <li><a href="#s18">新規ZIP生成手順（実践ガイド）</a></li>
+        <li><a href="#s19">設計書エクスポート（Excel）とZIPの対応</a></li>
+      </ol>
+      <p class="mb-0 mt-2 small text-secondary">ユーザ定義タスク登録ZIP・ルーティング定義ZIPは別ファイル（冒頭の案内を参照）</p>
+    </div>
+  </div>
+
+  <h2 class="h3 mt-4" id="s1">1. 概要</h2>
+  <p>エクスポートZIPは、ロジックフローの定義情報（実行順序、入出力、マッピングなど）と、デザイナ上の表示情報（ノード配置、リンク、UI用メタデータ）をまとめて扱うためのアーカイブである。1つのZIPに、複数のカテゴリ・複数のフロー・同一フローの複数バージョンをまとめて格納できる。</p>
+  <p>なお、本書が対象とするのはフロー画面からエクスポートする<code>flow_definition.json</code>形式のZIPである。これとは別に、テナントに共有登録するユーザ定義タスク自体（<code>key.type: "userDefinition"</code>が参照する定義本体）を登録・移行するための<code>user_definition.json</code>形式のZIPや、フローをREST APIとして公開するルーティング設定を扱う<code>flow_route.json</code>形式のZIPが存在する。いずれもファイル構造・トップレベル項目が異なる別形式のエクスポートであり、別ファイル（ユーザ定義編・ルーティング定義編）で扱う。公式には、これらは1つのZIPに一括でまとめて出力することもできる（<a href="logicdesigner-zip-spec-route.html">ルーティング定義編</a>2章参照）。本書のサンプルは<code>flow_definition.json</code>単体で構成された個別エクスポートである。</p>
+
+  <h2 class="h3 mt-4" id="s2">2. ZIP構造</h2>
+  <pre class="bg-white border rounded p-3">&lt;export-file&gt;.zip
+└── flow_definition.json
+└── flow_diagram/
+    └── &lt;flowId&gt;-&lt;version&gt;.png</pre>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>パス</th><th>役割</th><th>備考</th></tr></thead>
+    <tbody>
+      <tr><td><code>flow_definition.json</code></td><td>カテゴリおよびフロー定義本体</td><td>単一ファイル。複数カテゴリ・複数フロー・複数バージョンをまとめて格納</td></tr>
+      <tr><td><code>flow_diagram/&lt;flowId&gt;-&lt;version&gt;.png</code></td><td>デザイナ画面のフロー図を画像化したもの</td><td>フロー定義の各バージョンに対応する画像を1枚ずつ格納。エクスポート対象によっては存在しない場合がある</td></tr>
+    </tbody>
+  </table>
+  <p>フロー定義の件数とフロー図PNGファイルの件数は、必ずしも一致しない（図が生成されない、あるいはエクスポート対象外になるケースがある）。</p>
+
+  <h2 class="h3 mt-4" id="s3">3. flow_definition.json のトップレベル構造</h2>
+  <pre class="bg-white border rounded p-3">{
+  "flowCategories": [ { ... }, ... ],
+  "flowDefinitions": [ "{...}", "{...}", ... ]
+}</pre>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>キー</th><th>型</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>flowCategories</code></td><td>配列</td><td>フローを分類するカテゴリの一覧（JSONオブジェクトの配列）</td></tr>
+      <tr><td><code>flowDefinitions</code></td><td>配列</td><td>フロー定義の一覧。<strong>各要素はJSONオブジェクトではなく、JSONを文字列化した値（二重エンコード）</strong></td></tr>
+    </tbody>
+  </table>
+  <div class="alert alert-info" role="alert"><code>flowDefinitions</code>の各要素は文字列であるため、読み込む際は外側のJSONを解析した後、各要素をもう一度JSONとして解析（<code>JSON.parse</code>を2回）する必要がある。同様の二重エンコードは、フロー定義内の<code>additional.ui</code>にも存在する（<a href="#s12">12章</a>参照）。</div>
+
+  <h2 class="h3 mt-4" id="s4">4. flowCategories（フローカテゴリ）</h2>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>項目</th><th>型・例</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>categoryId</code></td><td>文字列</td><td>カテゴリを識別するID</td></tr>
+      <tr><td><code>categoryName</code></td><td>文字列</td><td>カテゴリ名（既定言語）</td></tr>
+      <tr><td><code>sortNumber</code></td><td>数値</td><td>表示順</td></tr>
+      <tr><td><code>localizes</code></td><td>オブジェクト</td><td>言語ごとのカテゴリ名。キーはロケール（<code>ja</code>、<code>en</code>、<code>zh_CN</code>など）。<a href="#s7">7章</a>参照</td></tr>
+      <tr><td><code>parentId</code></td><td>文字列または<code>null</code></td><td>親カテゴリの<code>categoryId</code>。<code>null</code>はルート直下</td></tr>
+      <tr><td><code>displayName</code></td><td>文字列</td><td>画面に表示する名称（通常<code>categoryName</code>と同値）</td></tr>
+    </tbody>
+  </table>
+  <p>カテゴリは親子関係（<code>parentId</code>）でツリー構造を持てる。<code>parentId</code>に他カテゴリの<code>categoryId</code>を指定すると、そのカテゴリの子として表示される。</p>
+  <pre class="bg-white border rounded p-3">{
+  "categoryId": "category001",
+  "categoryName": "サンプルカテゴリ",
+  "sortNumber": 0,
+  "localizes": {
+    "ja": { "locale": "ja", "categoryName": "サンプルカテゴリ" },
+    "en": { "locale": "en", "categoryName": "Sample Category" }
+  },
+  "parentId": null,
+  "displayName": "サンプルカテゴリ"
+}</pre>
+
+  <h2 class="h3 mt-4" id="s5">5. flowDefinitions と二重JSON構造</h2>
+  <p><code>flowDefinitions</code>配列の各要素をJSON解析すると、1件のフロー（1つの<code>flowId</code>×<code>version</code>）を表すオブジェクトが得られる。同一<code>flowId</code>でも<code>version</code>が異なれば別要素として格納される（<a href="#s13">13章</a>参照）。</p>
+
+  <h2 class="h3 mt-4" id="s6">6. フロー定義オブジェクトの項目一覧</h2>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>項目</th><th>型・例</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>flowId</code></td><td>文字列</td><td>フローを識別するID。カテゴリ内外で一意</td></tr>
+      <tr><td><code>version</code></td><td>数値</td><td>フロー定義のバージョン番号（1起点の整数）</td></tr>
+      <tr><td><code>categoryId</code></td><td>文字列</td><td>所属カテゴリの<code>categoryId</code></td></tr>
+      <tr><td><code>flowName</code></td><td>文字列</td><td>フロー名（既定言語）</td></tr>
+      <tr><td><code>localizes</code></td><td>オブジェクト</td><td>言語ごとの<code>flowName</code>。構造はカテゴリと同様</td></tr>
+      <tr><td><code>notes</code></td><td>文字列または<code>null</code></td><td>フローの備考・メモ（複数行可）</td></tr>
+      <tr><td><code>versionComment</code></td><td>文字列または<code>null</code></td><td>バージョンコメント。エクスポート元によっては項目自体が存在しない場合がある</td></tr>
+      <tr><td><code>transaction</code></td><td>真偽値</td><td>フロー実行をトランザクション制御するか</td></tr>
+      <tr><td><code>validateRepositoryData</code></td><td>真偽値</td><td>リポジトリデータの検証有無</td></tr>
+      <tr><td><code>mappingOrder</code></td><td>文字列</td><td>マッピングの評価順（確認できている値: <code>TARGET_HIERARCHY</code>、<code>SOURCE_HIERARCHY</code>）。エクスポート元によっては項目自体が存在しない場合がある。範囲が重なる<code>mappingRules</code>間の優先順位（11.2節）に関与している可能性がある</td></tr>
+      <tr><td><code>constants</code></td><td>配列</td><td>定数定義の配列。<a href="#s8">8章</a>参照</td></tr>
+      <tr><td><code>variablesDataDefinition</code></td><td>オブジェクト</td><td>フロー変数のデータ定義。<a href="#s9">9章</a>参照</td></tr>
+      <tr><td><code>inputDataDefinition</code></td><td>オブジェクト</td><td>フロー入力のデータ定義。<a href="#s9">9章</a>参照</td></tr>
+      <tr><td><code>outputDataDefinition</code></td><td>オブジェクト</td><td>フロー出力のデータ定義。<a href="#s9">9章</a>参照</td></tr>
+      <tr><td><code>flowElements</code></td><td>配列</td><td>フローを構成する要素（ノード・接続）の配列。<a href="#s10">10章</a>参照</td></tr>
+      <tr><td><code>additional.ui</code></td><td>文字列（二重JSON）</td><td>デザイナ上の表示情報。<a href="#s12">12章</a>参照</td></tr>
+    </tbody>
+  </table>
+  <div class="alert alert-warning" role="alert">項目の有無はエクスポート元のツールバージョンやエクスポート方法によって異なる場合がある。<code>mappingOrder</code>・<code>versionComment</code>は存在しないエクスポートも存在するため、読み込み側は両パターン（キー欠落／<code>null</code>）を許容する実装にする。同様に、<code>flowElements</code>の<code>key.version</code>が非<code>null</code>となる実例は確認できていない。</div>
+
+  <h2 class="h3 mt-4" id="s7">7. localizes（国際化情報）</h2>
+  <p>カテゴリ名・フロー名の多言語対応に使用する。キーはロケール文字列、値はロケールと名称を持つオブジェクト。</p>
+  <pre class="bg-white border rounded p-3">"localizes": {
+  "ja": { "locale": "ja", "flowName": "サンプルフロー" }
+}</pre>
+  <p>ロケールを持たないフロー・カテゴリでは<code>localizes: {}</code>（空オブジェクト）となる。</p>
+
+  <h2 class="h3 mt-4" id="s8">8. constants（定数定義）</h2>
+  <p>定数はフロー定義の<code>constants</code>配列に格納する。マッピング定義から<code>$const/&lt;name&gt;</code>として参照する（<a href="#s11">11章</a>参照）。</p>
+  <pre class="bg-white border rounded p-3">{
+  "name": "CONST1",
+  "value": "定数１",
+  "typeId": "string",
+  "description": "説明１",
+  "common": false
+}</pre>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>項目</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>定数ID。フロー内で定数を識別する名前。<code>$const/&lt;name&gt;</code>で参照</td></tr>
+      <tr><td><code>value</code></td><td>定数値（文字列格納。<code>typeId</code>に応じて実行時に解釈される）</td></tr>
+      <tr><td><code>typeId</code></td><td>データ型。<a href="#s9-2">9.2節</a>の基本型を指定できる</td></tr>
+      <tr><td><code>description</code></td><td>定数の説明</td></tr>
+      <tr><td><code>common</code></td><td>共通（テナント共有）定数かどうか</td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="h3 mt-4" id="s9">9. データ定義（入力・出力・変数）</h2>
+  <p><code>inputDataDefinition</code>、<code>outputDataDefinition</code>、<code>variablesDataDefinition</code>はいずれも同一の構造（<code>entrypoint</code> + <code>typeDefinitions</code>）を持つ。</p>
+
+  <h3 class="h4 mt-4" id="s9-1">9.1 entrypoint と typeDefinitions</h3>
+  <pre class="bg-white border rounded p-3">{
+  "entrypoint": { "typeId": "root", "basic": false, "required": false, "listingType": "none" },
+  "typeDefinitions": [
+    {
+      "id": "root",
+      "properties": [
+        { "typeId": "string",  "name": "input1",  "description": null, "listingType": "none", "required": false, "basic": true },
+        { "typeId": "integer", "name": "integer1", "description": null, "listingType": "none", "required": false, "basic": true },
+        { "typeId": "im_logic_object_1", "name": "object1", "description": null, "listingType": "none", "required": false, "basic": false },
+        { "typeId": "string",  "name": "string1", "description": null, "listingType": "list", "required": false, "basic": true }
+      ]
+    },
+    { "id": "im_logic_object_1", "properties": [ ... ] },
+    { "id": "string",  "properties": [] },
+    { "id": "integer", "properties": [] }
+  ]
+}</pre>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>項目</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>entrypoint.typeId</code></td><td>ルート型の<code>typeId</code>。通常<code>"root"</code>で、<code>typeDefinitions</code>内の同名IDを参照する</td></tr>
+      <tr><td><code>typeDefinitions</code></td><td>この定義内で使用する全ての型（ルート・複合型・基本型）の配列。基本型（<code>string</code>等）も参照用に<code>properties: []</code>として列挙される</td></tr>
+      <tr><td><code>typeDefinitions[].id</code></td><td>型ID。<code>root</code>、独自複合型ID（<code>im_logic_object_1</code>等）、基本型名のいずれか</td></tr>
+      <tr><td><code>typeDefinitions[].properties</code></td><td>その型が持つプロパティ（項目）の配列</td></tr>
+      <tr><td><code>properties[].typeId</code></td><td>プロパティの型。基本型名または<code>typeDefinitions</code>内の複合型ID</td></tr>
+      <tr><td><code>properties[].name</code></td><td>プロパティ名</td></tr>
+      <tr><td><code>properties[].description</code></td><td>説明（未設定時は<code>null</code>）</td></tr>
+      <tr><td><code>properties[].listingType</code></td><td><code>none</code>（単一項目）または<code>list</code>（配列）</td></tr>
+      <tr><td><code>properties[].required</code></td><td>必須項目かどうか</td></tr>
+      <tr><td><code>properties[].basic</code></td><td>基本型かどうか（<code>true</code>=基本型、<code>false</code>=複合型）</td></tr>
+    </tbody>
+  </table>
+  <p>複合型はネスト可能で、ある複合型のプロパティがさらに別の複合型を参照できる（例: <code>im_logic_object_1</code>のプロパティが<code>im_logic_object_2</code>を参照）。ネストの段数に明示的な上限はない。</p>
+
+  <h3 class="h4 mt-4" id="s9-2">9.2 基本型（typeId）一覧</h3>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>typeId</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>string</code></td><td>文字列</td></tr>
+      <tr><td><code>character</code></td><td>文字（1文字）</td></tr>
+      <tr><td><code>integer</code></td><td>整数</td></tr>
+      <tr><td><code>double</code></td><td>浮動小数点数</td></tr>
+      <tr><td><code>boolean</code></td><td>真偽値</td></tr>
+      <tr><td><code>date</code></td><td>日付</td></tr>
+      <tr><td><code>sqldate</code></td><td>SQL日付型（データベース連携タスクの入出力で使用）</td></tr>
+      <tr><td><code>byte</code></td><td>バイト列（バイナリデータ）</td></tr>
+      <tr><td><code>storage</code></td><td>ストレージ上のファイル・ディレクトリを指すパス値（<code>im_publicStorage</code>等のストレージ系タスクの出力型）</td></tr>
+      <tr><td><code>map</code></td><td>マップ（キー・バリュー構造）</td></tr>
+      <tr><td><code>any</code></td><td>任意の型（型を特定しない値）。REST呼び出しタスク（<code>im_httpclient</code>、20.6節）の型定義一覧に参照用として現れる</td></tr>
+    </tbody>
+  </table>
+  <p>上記以外の<code>typeId</code>は独自定義の複合型（<code>typeDefinitions</code>内の<code>id</code>）を指す。命名は自動採番（<code>im_logic_object_N</code>）またはユーザ指定名になる。</p>
+
+  <h3 class="h4 mt-4">9.3 配列・単一項目</h3>
+  <ul>
+    <li>配列: <code>listingType</code>に<code>"list"</code>を指定する</li>
+    <li>単一項目: <code>listingType</code>に<code>"none"</code>を指定する</li>
+  </ul>
+
+  <h2 class="h3 mt-4" id="s10">10. flowElements（フロー要素）</h2>
+  <p>フローは、<code>flowElements</code>配列に格納されたノードと接続の集合として表現される。全要素が同一の外形（下表）を持ち、種別ごとに<code>properties</code>の中身が異なる。</p>
+
+  <h3 class="h4 mt-4">10.1 共通項目</h3>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>項目</th><th>型</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>executeId</code></td><td>文字列</td><td>フロー内で一意な要素ID。マッピングの参照キー（<code>&lt;executeId&gt;/&lt;path&gt;</code>）としても使用</td></tr>
+      <tr><td><code>alias</code></td><td>文字列または<code>null</code></td><td>要素の別名。未設定時は<code>null</code></td></tr>
+      <tr><td><code>key</code></td><td>オブジェクト</td><td>要素種別の識別情報。<code>type</code>・<code>id</code>・<code>version</code>を持つ。10.2節参照</td></tr>
+      <tr><td><code>label</code></td><td>文字列または<code>null</code></td><td>デザイナ上の表示ラベル。接続要素では<code>null</code>になることが多い</td></tr>
+      <tr><td><code>comment</code></td><td>文字列または<code>null</code></td><td>要素に対するコメント</td></tr>
+      <tr><td><code>properties</code></td><td>オブジェクト</td><td>要素固有の設定。要素種別ごとに項目が異なる（15章の早見表を参照）</td></tr>
+      <tr><td><code>mappingDefinition</code></td><td>オブジェクトまたは<code>null</code></td><td>マッピングルールの集合。接続専用要素（<code>im_sequence</code>等）では<code>null</code>になる。11章参照</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="h4 mt-4">10.2 key.type の種類</h3>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>key.type</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>application</code></td><td>標準アプリケーション（IM-LogicDesigner組み込みの制御要素・標準タスク）。<code>key.id</code>で種別を識別</td></tr>
+      <tr><td><code>userDefinition</code></td><td>テナント内で共有登録されたユーザ定義タスク（SQL実行定義、他フロー呼び出し用フロー、外部連携など）への参照。定義本体はZIP外（登録済みのユーザ定義）にあり、要素側は<code>key.id</code>（定義ID）で参照するのみ</td></tr>
+      <tr><td><code>localUserDefinition</code></td><td>そのフロー内だけで有効なユーザ定義タスク。定義本体を要素の<code>properties.definition</code>にそのまま埋め込む（10.5節参照）</td></tr>
+    </tbody>
+  </table>
+  <p><code>key.version</code>は、<code>userDefinition</code>の特定バージョンを固定したい場合に使用する項目で、固定しない場合は<code>null</code>となる。</p>
+
+  <h3 class="h4 mt-4">10.3 標準要素（application）の主な種別</h3>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>key.id</th><th>分類</th><th>役割</th></tr></thead>
+    <tbody>
+      <tr><td><code>im_start</code></td><td>制御</td><td>フロー開始。フロー内に必ず1つ</td></tr>
+      <tr><td><code>im_end</code></td><td>制御</td><td>フロー終了。分岐により複数存在できる</td></tr>
+      <tr><td><code>im_sequence</code></td><td>接続</td><td>要素間の実行順を表す接続線。<code>startPoint</code>/<code>endPoint</code>を持ち、分岐元では<code>condition</code>も持つ</td></tr>
+      <tr><td><code>im_gateway</code></td><td>制御（分岐）</td><td>条件分岐（ゲートウェイ）。複数の<code>im_sequence</code>で分岐し、<code>defaultRoot</code>でデフォルト経路を指定</td></tr>
+      <tr><td><code>im_startLoop</code> / <code>im_endLoop</code></td><td>制御（繰り返し）</td><td>ループ区間の開始・終了。<code>loopCount</code>・<code>loopItem</code>・<code>condition</code>・<code>clearVariables</code>を持つ</td></tr>
+      <tr><td><code>im_variableOperation</code></td><td>データ操作</td><td>変数への値設定。マッピングルールで値を計算・代入する</td></tr>
+      <tr><td><code>im_logger</code></td><td>ユーティリティ</td><td>ログ出力。<code>level</code>・<code>loggerName</code>を指定</td></tr>
+      <tr><td><code>im_callFlow</code></td><td>制御</td><td>他フローの呼び出し。<code>flowId</code>・<code>recursive</code>を指定</td></tr>
+      <tr><td><code>im_errorHandlingStart</code></td><td>制御（エラー処理）</td><td>エラーハンドリング区間の開始点</td></tr>
+      <tr><td><code>im_publicStorage</code> / <code>im_sessionStorage</code></td><td>ストレージ</td><td>公開／セッションストレージ上のパスを生成・参照するタスク</td></tr>
+      <tr><td><code>im_getStorageInfo</code></td><td>ストレージ</td><td>ストレージ上のファイル情報取得</td></tr>
+      <tr><td><code>im_writeTextToStorage</code> / <code>im_appendTextToStorage</code> / <code>im_readTextToStorage</code></td><td>ストレージ</td><td>テキストファイルの書き込み・追記・読み込み。<code>charset</code>を指定</td></tr>
+      <tr><td><code>im_copyTo</code></td><td>ストレージ</td><td>ファイル・ディレクトリのコピー。<code>overwrite</code>を指定</td></tr>
+      <tr><td><code>im_getFiles</code> / <code>im_removeStorage</code></td><td>ストレージ</td><td>ファイル一覧取得・削除。<code>recursive</code>を指定</td></tr>
+      <tr><td><code>im_sendTextMail</code></td><td>ユーティリティ</td><td>テキストメール送信。<code>failOnError</code>を指定</td></tr>
+      <tr><td><code>im_getAccountInfo</code> / <code>im_addAccount</code> / <code>im_activateAccount</code> / <code>im_grantAccountRole</code> / <code>im_immRegisterProfile</code></td><td>アカウント管理</td><td>intra-martアカウント・プロファイルの取得／作成／有効化／ロール付与</td></tr>
+    </tbody>
+  </table>
+  <p>上記以外にも、テナントに登録されたユーザ定義タスク（<code>key.type: "userDefinition"</code>）が、その定義ID（任意の名称）を<code>key.id</code>としてそのまま持つ形で現れる。これらは製品標準ではなく、エクスポート元テナントで個別に定義されたタスクである。</p>
+  <p class="text-secondary small">上表は、フロー制御・汎用タスクを中心とした一覧である。公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/appendix/task/index.html">「5.2. タスク一覧」</a>によると、標準タスクは汎用タスク・ストレージ操作・基盤機能・アクセスセキュリティ・IM共通マスタ・Accel Collaboration・IMBox・IM-BPM・IM-BIS・IM-ContentsSearch・Salesforce・Office365・SSH・IBM Watson・プロジェクトチーム・IM-Knowledge・IM-BloomMaker・IM-Repository・Accel Studio・IM-Copilotの20カテゴリにわたって提供されており、上表はこのうち一部（主に汎用タスク）のみを対象とする。テナント個別に登録されたユーザ定義タスクが、製品標準に似た命名（業務テンプレート由来の名称など）を持つ場合もあるが、それらは<code>key.type: "userDefinition"</code>であり標準要素ではない。</p>
+
+  <h3 class="h4 mt-4">10.4 userDefinition要素（共有ユーザ定義タスク）</h3>
+  <p><code>key.type: "userDefinition"</code>の要素は、定義本体を持たず、テナントに登録済みの定義を<code>key.id</code>で参照するのみである。要素自身の<code>properties</code>は通常<code>continueOnError</code>程度に限られ、入出力の受け渡しは<code>mappingDefinition.mappingRules</code>で行う。この定義本体自体の登録・エクスポート形式（<code>user_definition.json</code>）は<a href="logicdesigner-zip-spec-userdef.html">ユーザ定義編</a>を参照。</p>
+  <pre class="bg-white border rounded p-3">{
+  "executeId": "userTask1",
+  "alias": null,
+  "key": { "type": "userDefinition", "id": "SampleUserDefinedTask", "version": null },
+  "label": "サンプルユーザ定義タスク",
+  "comment": "",
+  "properties": { "continueOnError": false },
+  "mappingDefinition": {
+    "mappingRules": [
+      { "id": "de0391bf-...", "target": "userTask1/param1",
+        "source": { "type": "value", "name": null, "path": "$input/param1", "arguments": null } }
+    ]
+  }
+}</pre>
+
+  <h3 class="h4 mt-4">10.5 localUserDefinition要素（フロー内埋め込みユーザ定義タスク）</h3>
+  <p><code>key.type: "localUserDefinition"</code>の要素は、そのフロー専用のユーザ定義タスクであり、定義本体全体を<code>properties.definition</code>にインライン埋め込みする。他フローからは参照されない。</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>項目</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>properties.definition.definitionId</code></td><td>定義ID（通常<code>executeId</code>と同値）</td></tr>
+      <tr><td><code>properties.definition.version</code></td><td>定義のバージョン</td></tr>
+      <tr><td><code>properties.definition.categoryId</code></td><td>定義のカテゴリ（未分類は空文字）</td></tr>
+      <tr><td><code>properties.definition.definitionType</code></td><td>定義の種類（例: <code>"sql"</code>＝SQL実行タスク）。内部で実行する処理の種類に応じた値を取る</td></tr>
+      <tr><td><code>properties.definition.definitionName</code></td><td>定義名（デザイナ上の表示名）</td></tr>
+      <tr><td><code>properties.definition.sortNumber</code></td><td>表示順</td></tr>
+      <tr><td><code>properties.definition.definitionData.elementId</code></td><td>実処理を行う内部要素ID。SQLタスクでは<code>im_queryExecutor</code></td></tr>
+      <tr><td><code>properties.definition.definitionData.elementProperties</code></td><td>内部要素固有の設定。SQLタスクでは<code>query</code>（SQL文）、<code>queryType</code>（<code>SELECT</code>等）、<code>databaseType</code>（<code>TENANT</code>等）、<code>connectId</code>、<code>limitation</code>を持つ</td></tr>
+      <tr><td><code>properties.definition.definitionData.inputDataDefinition</code> / <code>outputDataDefinition</code></td><td>この定義固有の入出力データ定義（構造は9章と同様）</td></tr>
+    </tbody>
+  </table>
+  <pre class="bg-white border rounded p-3">{
+  "executeId": "localSqlTask1",
+  "key": { "type": "localUserDefinition", "id": "localSqlTask1", "version": null },
+  "properties": {
+    "definition": {
+      "definitionId": "localSqlTask1",
+      "version": 1,
+      "categoryId": "",
+      "definitionType": "sql",
+      "definitionName": "サンプルSQL実行タスク",
+      "sortNumber": 100,
+      "definitionData": {
+        "elementId": "im_queryExecutor",
+        "iconId": null,
+        "elementProperties": {
+          "query": "SELECT column1 FROM sample_table",
+          "queryType": "SELECT",
+          "databaseType": "TENANT",
+          "connectId": "default",
+          "limitation": false
+        },
+        "inputDataDefinition": { "entrypoint": {...}, "typeDefinitions": [...] },
+        "outputDataDefinition": { "entrypoint": {...}, "typeDefinitions": [...] }
+      }
+    }
+  }
+}</pre>
+  <p><code>definitionType</code>には<code>"sql"</code>以外に<code>"javascript"</code>・<code>"rest"</code>も存在し、他にも複数の処理種別が存在する。<code>elementId</code>・<code>elementProperties</code>の内容は<code>definitionType</code>ごとに異なる。詳細は<a href="logicdesigner-zip-spec-userdef.html">ユーザ定義編</a>を参照。</p>
+
+  <h2 class="h3 mt-4" id="s11">11. mappingDefinition（マッピング定義）</h2>
+  <p>マッピングは、各フロー要素の<code>mappingDefinition.mappingRules</code>に配列として格納する。マッピングを持たない要素でも<code>mappingRules: []</code>を保持する場合があり、接続専用要素（<code>im_sequence</code>等）では<code>mappingDefinition</code>自体が<code>null</code>になる。</p>
+
+  <h3 class="h4 mt-4">11.1 mappingRules の構造</h3>
+  <pre class="bg-white border rounded p-3">{
+  "id": "32a7f5a0-fae3-49c6-9736-dca126763d6f",
+  "target": "$variable/value1",
+  "source": {
+    "type": "function",
+    "name": "im_string_concat",
+    "path": null,
+    "arguments": [
+      { "type": "value", "name": null, "path": "$variable/value1", "arguments": null },
+      { "type": "value", "name": null, "path": "$const/CONST1", "arguments": null }
+    ]
+  }
+}</pre>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>項目</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>ルールの一意なID（UUID）</td></tr>
+      <tr><td><code>target</code></td><td>設定先。11.2節のパス記法に従う</td></tr>
+      <tr><td><code>source</code></td><td>設定値を生成する式。11.3節参照</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="h4 mt-4">11.2 target（設定先）の記法</h3>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>記法</th><th>意味</th></tr></thead>
+    <tbody>
+      <tr><td><code>$variable/&lt;name&gt;</code></td><td>フロー変数への設定</td></tr>
+      <tr><td><code>$output/&lt;name&gt;</code></td><td>フロー出力への設定</td></tr>
+      <tr><td><code>&lt;executeId&gt;/&lt;path&gt;</code></td><td>同一フロー内の他要素（主にタスク）の入力プロパティへの設定。要素自身への設定の場合はサブパスなし（例: <code>im_publicStorage</code>）</td></tr>
+    </tbody>
+  </table>
+  <div class="alert alert-info" role="alert">
+    <strong>一括（構造的）マッピング</strong>: <code>target</code>・<code>source.path</code>の両方をサブパスなしのプレフィックスのみ（例: <code>target: "$output"</code>、<code>source.path: "&lt;executeId&gt;"</code>）にすると、1件の<code>mappingRules</code>だけで、参照元オブジェクトの子プロパティを名前が一致する設定先の子プロパティへまとめて割り当てられる。
+    <pre class="bg-white border rounded p-3 mb-0">{
+  "id": "8f4fd6c4-3b60-4907-9959-64f8d31e01c9",
+  "target": "$output",
+  "source": { "type": "value", "name": null, "path": "userTask1", "arguments": null }
+}</pre>
+    <p class="mb-0 mt-1">この場合、<code>userTask1</code>の出力データ定義と<code>$output</code>のデータ定義の双方に同名のプロパティ（例: 双方に<code>status</code>・<code>message</code>）が存在すれば、それぞれ暗黙的に対応付けられる。プロパティ単位で個別に<code>mappingRules</code>を書く方式（11.1節の例）と、この一括方式のどちらも有効であり、デザイナ上で相互に変換されると見られる。名前が一致しないプロパティがどう扱われるか（無視される／エラーになる等）は未確認。</p>
+  </div>
+
+  <div class="alert alert-info" role="alert">
+    <strong>マッピングルールが競合する場合の優先順位</strong>
+    <ul class="mb-0">
+      <li><strong>ターゲットパスの詳細さ（特異性）が異なる場合</strong>: 範囲が重なる複数のルール（例: <code>target: "$output"</code>という一括ルールと、<code>target: "$output/message"</code>という個別ルール）が存在すると、<strong>ターゲットパスがより詳細（狭い）なルールが優先される</strong>。この優先順位は<code>mappingRules</code>配列内の並び順とは無関係で、個別ルールを一括ルールより後ろに置いても、前に置いても結果は変わらない。</li>
+      <li><strong>ターゲットパスが完全に同一の場合</strong>: 同じ<code>target</code>（例: <code>"$output/message"</code>）を持つルールが複数存在すると、<strong><code>mappingRules</code>配列内で後方にあるルールが優先される</strong>（逐次上書きに近い挙動）。</li>
+    </ul>
+    <p class="mb-0 mt-1"><code>mappingOrder</code>（6章）がこれらの優先順位の決定に関与している可能性がある。<code>mappingOrder: "SOURCE_HIERARCHY"</code>の場合の挙動であり、<code>"TARGET_HIERARCHY"</code>など他の値で優先順位が変わるかは未確認。</p>
+  </div>
+
+  <h3 class="h4 mt-4">11.3 source（設定値）の構造</h3>
+  <p><code>source.type</code>には<code>value</code>（値の参照）と<code>function</code>（関数呼び出し）がある。</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>type</th><th>使用する項目</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>value</code></td><td><code>path</code></td><td>定数・入力・変数・他要素出力・実行コンテキストなどの値をそのまま参照する。11.4節のパスプレフィックスに従う</td></tr>
+      <tr><td><code>function</code></td><td><code>name</code>, <code>arguments</code></td><td>組み込み関数を呼び出す。<code>arguments</code>は<code>source</code>と同型のオブジェクト配列で、値または別の関数呼び出しを再帰的にネストできる</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="h4 mt-4" id="s11-4">11.4 path プレフィックス一覧</h3>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>プレフィックス</th><th>意味</th><th>例</th></tr></thead>
+    <tbody>
+      <tr><td><code>$input/&lt;name&gt;</code></td><td>フロー入力</td><td><code>$input/param1</code></td></tr>
+      <tr><td><code>$output/&lt;name&gt;</code></td><td>フロー出力（他要素マッピングの参照元として使う場合）</td><td>-</td></tr>
+      <tr><td><code>$variable/&lt;name&gt;</code></td><td>フロー変数</td><td><code>$variable/value1</code></td></tr>
+      <tr><td><code>$const/&lt;name&gt;</code></td><td>フロー定数</td><td><code>$const/CONST1</code></td></tr>
+      <tr><td><code>$session_properties/&lt;name&gt;</code></td><td>セッション情報（実行環境のプロパティ）</td><td><code>$session_properties/lineSeparator</code></td></tr>
+      <tr><td><code>$user_context/&lt;path&gt;</code></td><td>ログインユーザのコンテキスト情報</td><td><code>$user_context/userProfile/userCd</code></td></tr>
+      <tr><td><code>$account_context/&lt;path&gt;</code></td><td>アカウントコンテキスト情報</td><td><code>$account_context/userCd</code></td></tr>
+      <tr><td><code>$task_result/&lt;path&gt;</code></td><td>直前タスクの実行結果情報（主にエラーハンドリング区間で使用）</td><td><code>$task_result/executeId</code></td></tr>
+      <tr><td><code>&lt;executeId&gt;/&lt;path&gt;</code></td><td>同一フロー内の他要素の出力。ループ内では<code>&lt;loopExecuteId&gt;/item/&lt;path&gt;</code>で現在のループ対象要素を参照できる</td><td><code>loopTask1/item/property1</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="h4 mt-4">11.5 関数（function）呼び出し</h3>
+  <p>関数呼び出しは<code>{ "type": "function", "name": "<関数名>", "arguments": [...] }</code>の形式を取る。<code>arguments</code>内の各要素は<code>value</code>または<code>function</code>のいずれでもよく、ネストにより複雑な式を組み立てられる。関数名（<code>source.name</code>）は、公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/appendix/mapping_function_list.html">「5.3. マッピング関数一覧」</a>に掲載されている全カテゴリ・全関数に対応する。カテゴリごとの内部識別子は次のとおり。</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>カテゴリ</th><th>関数名（<code>source.name</code>）</th></tr></thead>
+    <tbody>
+      <tr><td>文字列操作</td><td><code>im_string_concat</code>、<code>im_string_replace</code>、<code>im_string_trim</code>、<code>im_string_split</code>、<code>im_string_join</code>、<code>im_string_el</code>、<code>im_string_substring</code></td></tr>
+      <tr><td>数値操作</td><td><code>im_number_parsenumber</code>、<code>im_number_formatnumber</code></td></tr>
+      <tr><td>数値演算</td><td><code>im_math_addition</code>、<code>im_math_subtraction</code>、<code>im_math_multiplication</code>、<code>im_math_division</code>、<code>im_math_modulus</code>、<code>im_math_roundUp</code>、<code>im_math_roundHalfUp</code>、<code>im_math_roundDown</code>、<code>im_math_abs</code>、<code>im_math_pow</code>、<code>im_math_max</code>、<code>im_math_min</code></td></tr>
+      <tr><td>日付操作</td><td><code>im_date_parsedate</code>、<code>im_date_formatdate</code>、<code>im_date_calculate</code>、<code>im_date_interval</code>、<code>im_date_beginning_of_the_month</code>、<code>im_date_end_of_the_month</code>、<code>im_date_convertdate_in_system_tz</code>、<code>im_date_convertdate_in_account_tz</code>、<code>im_date_account_parsedate</code>、<code>im_date_account_formatdate</code></td></tr>
+      <tr><td>ID生成</td><td><code>im_id_identifier</code>、<code>im_id_uuid</code></td></tr>
+      <tr><td>Base64</td><td><code>im_binary_encode_base64</code>（エンコード）、<code>im_base64_decode_binary</code>（デコード）</td></tr>
+      <tr><td>配列操作</td><td><code>im_array_unshift</code>、<code>im_array_push</code>、<code>im_array_remove</code>、<code>im_array_replace</code>、<code>im_array_size</code>、<code>im_array_get</code>、<code>im_array_insert</code>、<code>im_array_first</code>、<code>im_array_last</code></td></tr>
+      <tr><td>オブジェクト操作</td><td><code>im_object_keys</code>、<code>im_object_values</code>、<code>im_object_toUpperCamelCase</code>、<code>im_object_toLowerCamelCase</code>、<code>im_object_toUpperSnakeCase</code>、<code>im_object_toLowerSnakeCase</code></td></tr>
+      <tr><td>JSON</td><td><code>im_to_json</code>、<code>im_parse_json</code></td></tr>
+    </tbody>
+  </table>
+  <p>個々の関数が受け取る<code>arguments</code>の型・順序は、上記リンク先の各関数の個別ページ（例: <code>mapping_function/string/im_string_concat.html</code>）を参照する。</p>
+
+  <h3 class="h4 mt-4">11.6 EL式（condition / defaultRoot）</h3>
+  <p><code>im_sequence</code>・<code>im_startLoop</code>の<code>condition</code>は、<code>mappingRules</code>とは別に、<code>${...}</code>形式のEL（Expression Language）式の文字列として保持する。</p>
+  <pre class="bg-white border rounded p-3">"condition": "${im_startLoop1.index%$const[\"3\"]==$const[\"0\"]}"
+"condition": "${im_startLoop1.index&lt;=task1.count}"</pre>
+  <p>式の中では、要素の<code>executeId</code>にプロパティ名を続けて実行時の値（<code>.index</code>＝ループの現在回数、<code>.count</code>＝タスク結果の件数など）を参照できるほか、<code>$const["<定数ID>"]</code>の形式で定数を参照できる。<code>im_gateway</code>の<code>defaultRoot</code>は式ではなく、デフォルト経路となる<code>im_sequence</code>要素の<code>executeId</code>を直接指定する。</p>
+
+  <h2 class="h3 mt-4" id="s12">12. additional.ui（デザイナ表示情報）</h2>
+  <p><code>additional.ui</code>は、さらにJSON文字列化されたデザイナ情報を格納する（二重JSON、<a href="#s5">5章</a>参照）。解析後のトップレベル構造は次のとおり。</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>項目</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>version</code></td><td>UIデータ形式のバージョン</td></tr>
+      <tr><td><code>graph.cells</code></td><td>デザイナ上のノード・リンクの配列。12.2節参照</td></tr>
+      <tr><td><code>dataMap</code></td><td>UIノードID→フロー要素の詳細情報の対応表。12.3節参照</td></tr>
+      <tr><td><code>optionMap</code></td><td>UIノードID→表示用の簡易情報の対応表。12.4節参照</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="h4 mt-4">12.1 UIノードIDとフロー要素の対応</h3>
+  <p><code>graph.cells</code>の各ノードは<code>id</code>（UUID形式のUIノードID）を持ち、これが<code>dataMap</code>・<code>optionMap</code>のキーになる。UIノードIDとフロー要素（<code>flowElements[].executeId</code>）の対応は、<code>dataMap[uiNodeId].common.executeId</code>を介して取得する。</p>
+
+  <h3 class="h4 mt-4">12.2 graph.cells（ノード・リンク）</h3>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>type</th><th>対応するflowElements種別</th></tr></thead>
+    <tbody>
+      <tr><td><code>devs.StartModel</code></td><td><code>im_start</code></td></tr>
+      <tr><td><code>devs.EndModel</code></td><td><code>im_end</code></td></tr>
+      <tr><td><code>devs.ProcModel</code></td><td>タスク要素全般（<code>im_variableOperation</code>、<code>im_logger</code>、各種ストレージ操作、userDefinition/localUserDefinitionタスクなど）</td></tr>
+      <tr><td><code>devs.GatewayModel</code></td><td><code>im_gateway</code></td></tr>
+      <tr><td><code>devs.LoopStartModel</code> / <code>devs.LoopEndModel</code></td><td><code>im_startLoop</code> / <code>im_endLoop</code></td></tr>
+      <tr><td><code>devs.CallFlowModel</code></td><td><code>im_callFlow</code></td></tr>
+      <tr><td><code>devs.ErrorHandlingStartModel</code></td><td><code>im_errorHandlingStart</code></td></tr>
+      <tr><td><code>devs.CommentModel</code></td><td>（対応なし。UI専用の注釈ノード）</td></tr>
+      <tr><td><code>link</code></td><td><code>im_sequence</code>（ノード間の接続線）</td></tr>
+    </tbody>
+  </table>
+  <p>ノード種別（<code>link</code>以外）に共通する項目: <code>size</code>（幅・高さ）、<code>position</code>（<code>x</code>/<code>y</code>座標）、<code>id</code>（UIノードID）、<code>z</code>（重なり順）、<code>inPorts</code>/<code>outPorts</code>（入出力ポートID配列。通常<code>["in"]</code>/<code>["out"]</code>）、<code>attrs</code>（表示属性。<code>text.title</code>に<code>executeId</code>、<code>text.label</code>に<code>label</code>相当のテキストを持つ）。</p>
+  <p><code>link</code>タイプの項目は次の構造を持ち、フロー定義側の<code>im_sequence</code>要素の<code>startPoint</code>/<code>endPoint</code>と対応する。</p>
+  <pre class="bg-white border rounded p-3">{
+  "type": "link",
+  "source": { "id": "&lt;UIノードID&gt;", "port": "out" },
+  "target": { "id": "&lt;UIノードID&gt;", "port": "in" },
+  "id": "&lt;リンクのUUID&gt;",
+  "z": 3,
+  "attrs": { ".link-tools>.link-tool>.tool-remove": { "display": "" } }
+}</pre>
+  <p><code>devs.CommentModel</code>（コメント注釈）はデザイナ上の表示専用要素であり、対応する<code>flowElements</code>は存在せず、<code>dataMap</code>・<code>optionMap</code>にも登録されない。</p>
+
+  <h3 class="h4 mt-4">12.3 dataMap</h3>
+  <p>キーはUIノードID。値は次の4項目を持つ。</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>項目</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>metadata.key</code></td><td>要素種別（<code>flowElements[].key</code>と同形式）</td></tr>
+      <tr><td><code>metadata.elementProperties</code></td><td>この要素種別がデザイナ画面で表示・入力するプロパティのメタ情報の配列。下表参照</td></tr>
+      <tr><td><code>metadata.inputDataDefinition</code> / <code>outputDataDefinition</code></td><td>タスク固有の入出力データ定義（該当しない要素では<code>null</code>）</td></tr>
+      <tr><td><code>common.executeId</code> / <code>alias</code> / <code>label</code> / <code>comment</code></td><td><code>flowElements</code>側の同名項目と対応する値</td></tr>
+      <tr><td><code>typical</code></td><td>よく使う設定のプリセット値。分岐条件などが入る場合がある（例: <code>{"@then": "${...}"}</code>）。多くの要素では空オブジェクト</td></tr>
+      <tr><td><code>mapping.inputKeys</code></td><td>マッピングエディタで選択可能な参照元（<code>$input</code>、<code>$variable</code>、<code>$const</code>等）の一覧</td></tr>
+      <tr><td><code>mapping.additionalKeys</code></td><td>追加の参照元キー</td></tr>
+      <tr><td><code>mapping.json</code></td><td>グラフィカルマッピングエディタ上のノード配置・接続情報。<code>connectors</code>（線）や<code>attrs</code>（ノード座標）を保持し、<code>flowElements[].mappingDefinition.mappingRules</code>と対になるデータ。単なる表示用ではなく、内容が<code>mappingRules</code>と整合していないとデザイナでの再保存時にルールが失われる（12.5節参照）</td></tr>
+    </tbody>
+  </table>
+  <p><code>metadata.elementProperties</code>の各要素は、<code>propertyName</code>（対応する<code>properties</code>のキー）、<code>enable</code>（入力可否）、<code>required</code>（必須か）、<code>array</code>（配列項目か）、<code>label</code>（画面表示名）、<code>options</code>（選択肢）を持つ。プルダウンやフラグ入力では<code>type</code>（<code>"pulldown"</code>、<code>"flag"</code>等）、<code>defaultValue</code>、<code>text</code>（フラグのラベル文言）が追加される。</p>
+  <pre class="bg-white border rounded p-3">{
+  "propertyName": "level",
+  "enable": true, "required": false, "array": false,
+  "defaultValue": "INFO",
+  "type": "pulldown",
+  "label": "ログレベル",
+  "options": [
+    { "name": "ERROR", "label": "ERROR", "value": "ERROR" },
+    { "name": "WARN",  "label": "WARN",  "value": "WARN" },
+    { "name": "INFO",  "label": "INFO",  "value": "INFO" },
+    { "name": "DEBUG", "label": "DEBUG", "value": "DEBUG" },
+    { "name": "TRACE", "label": "TRACE", "value": "TRACE" }
+  ]
+}</pre>
+
+  <h3 class="h4 mt-4">12.4 optionMap</h3>
+  <p>キーはUIノードID。値は<code>title</code>（通常<code>executeId</code>）、<code>label</code>（表示ラベル）、<code>inNum</code>/<code>outNum</code>（入出力ポート数）を持つ、ノード一覧表示などで使う簡易情報。</p>
+
+  <h3 class="h4 mt-4" id="s12-5">12.5 mapping.json（グラフィカルマッピングの内部構造）</h3>
+  <div class="alert alert-danger" role="alert">要素が<code>mappingDefinition.mappingRules</code>を持つ場合、対応する<code>dataMap[uiNodeId].mapping.json</code>も正しい内容で埋める必要がある。<strong>空<code>{}</code>のまま（または<code>mappingRules</code>と不整合な内容）にしてZIPを生成すると、ZIP自体のインポートは成功しても、デザイナでそのフローを開いて保存した時点で<code>mappingRules</code>が消去される</strong>（マッピング先の出力が全て<code>null</code>になる）。<code>mapping.json</code>は単なる表示用の付随データではなく、デザイナが実際のマッピング内容の正とみなすデータである可能性が高い。</div>
+  <p><code>mapping.json</code>は、その要素の<code>mappingRules</code>をグラフィカルエディタ上で表現するための、独立した小さなノード・接続グラフである。</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>項目</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>version</code></td><td>形式バージョン。観測範囲では常に<code>1</code></td></tr>
+      <tr><td><code>connectors</code></td><td>マッピング内容を表す接続線の配列。1件が基本的に<code>mappingRules</code>1件に対応する（12.5.1節参照）</td></tr>
+      <tr><td><code>attrs</code></td><td>関数ノードのキャンバス上の座標。<code>{ "&lt;関数ノードのid&gt;": { "x": ..., "y": ... } }</code>の形式。単純な値参照のみで関数を使わない場合は空オブジェクト</td></tr>
+      <tr><td><code>size</code></td><td>キャンバスのサイズ（<code>width</code>/<code>height</code>）。観測範囲ではいずれも<code>{"width":400,"height":500}</code>で固定値の可能性がある</td></tr>
+    </tbody>
+  </table>
+
+  <h4 class="mt-4" style="font-size:1rem;font-weight:600;">12.5.1 connectors の構造</h4>
+  <p>単純な値参照（関数を使わない<code>mappingRules</code>）の場合、1件の<code>mappingRules</code>要素が1件の<code>connectors</code>要素に対応する。</p>
+  <pre class="bg-white border rounded p-3">{
+  "id": "f5c0f789-d437-475e-8d80-9b83eb44038d",
+  "source": {
+    "id": "7a9878c6-a8a6-4700-9ba8-2c7920af62f0",
+    "type": "$input",
+    "path": "sample_mock_response_generate1\tstatus",
+    "port": "out"
+  },
+  "target": {
+    "id": "e94a3b4d-9014-4c45-aa5f-7031a141bad6",
+    "type": "$output",
+    "path": "$output\tstatus",
+    "port": "in"
+  }
+}</pre>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>項目</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td><strong>対応する<code>mappingRules[].id</code>と同一のUUIDを指定する</strong>。この一致によって、JSON側のルールとグラフィカル表示側の接続が結び付けられていると考えられる</td></tr>
+      <tr><td><code>source.id</code> / <code>target.id</code></td><td>このマッピングキャンバス内でのみ有効な、新規発行のUUID（<code>mappingRules</code>側の値とは無関係）</td></tr>
+      <tr><td><code>source.type</code></td><td>参照元ノードの種別。単純な値参照の場合は、実際の参照先（<code>$variable</code>／<code>$const</code>／他要素の出力等）によらず常に<code>"$input"</code>になると見られる。参照元が関数呼び出しの場合は関数名（例: <code>"im_string_join"</code>）</td></tr>
+      <tr><td><code>target.type</code></td><td>設定先ノードの種別。単純な値設定の場合は、<code>mappingRules[].target</code>の実際のプレフィックス・種類（<code>$output</code>／<code>$variable</code>／他要素の入力プロパティ等）によらず<strong>常に<code>"$output"</code></strong>になる（<code>source.type</code>が実際の参照先によらず常に<code>"$input"</code>になるのと対の規則）。設定先が関数の引数の場合は関数名</td></tr>
+      <tr><td><code>source.path</code> / <code>target.path</code></td><td>参照元・設定先のパス。<strong><code>mappingRules</code>側とは異なり、区切り文字がスラッシュ（<code>/</code>）ではなくタブ文字（<code>\t</code>）である</strong>（例: <code>"$variable\twk_result"</code>、<code>"sample_mock_response_generate1\tstatus"</code>）。<code>mappingRules</code>側のパスが2階層以上ネストしている場合（例: <code>"userTask1/status/statusCode"</code>）も、スラッシュを単純にタブへ置き換えるだけでよい（<code>"userTask1\tstatus\tstatusCode"</code>）</td></tr>
+      <tr><td><code>source.port</code> / <code>target.port</code></td><td>接続点。参照元は通常<code>"out"</code>、設定先は通常<code>"in"</code>。関数への引数が複数ある場合、設定先は<code>"in1"</code>、<code>"in2"</code>のように連番になる</td></tr>
+    </tbody>
+  </table>
+  <p>関数呼び出しを伴う<code>mappingRules</code>（<code>source.type: "function"</code>、11.5節）の場合は、関数ノード自体も<code>connectors</code>の中間ノードとして表現され、複数の<code>connectors</code>（各引数→関数、関数→設定先）に展開される。関数ノードの<code>id</code>は<code>attrs</code>のキーとしても使われ、キャンバス上の座標を持つ。この場合、<code>mappingRules[].id</code>と一致するのは、関数の出力を最終的な設定先へつなぐ<code>connectors</code>要素のみである。</p>
+  <p><code>mappingRules</code>を持たない要素（<code>mappingRules: []</code>）については、対応する<code>mapping.json</code>を<code>{ "version": 1, "attrs": {}, "connectors": [], "size": {...} }</code>のような空の状態のままにしても問題ないと見られる。</p>
+  <p>11.2節の一括（構造的）マッピングを使う場合も、<code>connectors</code>の構造は変わらない。<code>source.path</code>・<code>target.path</code>にサブパスなしのプレフィックスのみ（例: <code>"userTask1"</code>、<code>"$output"</code>）を指定した1件の<code>connectors</code>要素になるだけで、個々の子プロパティごとに<code>connectors</code>を分ける必要はない。</p>
+
+  <h2 class="h3 mt-4" id="s13">13. 複数フロー・バージョンの格納</h2>
+  <p>1つの<code>flow_definition.json</code>には、複数のカテゴリと複数のフロー定義を格納できる。<code>flowCategories</code>はカテゴリの配列、<code>flowDefinitions</code>はフロー定義（二重JSON文字列）の配列である。</p>
+  <p>同一の<code>flowId</code>に対して複数のバージョンを格納できる。各バージョンは<code>version</code>（1起点の整数）で識別し、フロー名やカテゴリが同じでも、定義内容・フロー要素・図をバージョンごとに個別のエントリとして保持する。バージョンは通常1から連番で付与される。</p>
+
+  <h2 class="h3 mt-4" id="s14">14. フロー図（flow_diagram）との対応</h2>
+  <p>フロー図は<code>flow_diagram/&lt;flowId&gt;-&lt;version&gt;.png</code>として格納する。複数バージョンを持つフローでは、バージョンごとに異なる画像ファイルを持つ（例: <code>&lt;flowId&gt;-1.png</code>、<code>&lt;flowId&gt;-2.png</code>、...）。</p>
+  <p>ZIP内のフロー定義とフロー図を対応付ける際は、<code>flowId</code>と<code>version</code>をキーとしてファイル名（<code>&lt;flowId&gt;-&lt;version&gt;.png</code>）を組み立てる。ファイル名に使用できない文字や、同名となるIDの扱いは利用環境の制約を確認する。フロー定義側のエントリ数とフロー図ファイル数は必ずしも一致しない（図が生成されない、あるいはエクスポート対象外になるケースがある）ため、突合時は欠落を許容する。</p>
+
+  <h2 class="h3 mt-4" id="s15">15. 標準フロー要素 早見表</h2>
+  <p>10.3節の要素について、<code>properties</code>に持つ設定項目を一覧化する。</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>key.id</th><th>properties項目</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>im_start</code></td><td>（なし）</td><td>-</td></tr>
+      <tr><td><code>im_end</code></td><td>（なし）</td><td>-</td></tr>
+      <tr><td rowspan="3"><code>im_sequence</code></td><td><code>startPoint</code></td><td>接続元要素の<code>executeId</code></td></tr>
+      <tr><td><code>endPoint</code></td><td>接続先要素の<code>executeId</code></td></tr>
+      <tr><td><code>condition</code></td><td>（分岐元がゲートウェイの場合のみ）分岐条件のEL式</td></tr>
+      <tr><td><code>im_gateway</code></td><td><code>defaultRoot</code></td><td>デフォルト経路となる<code>im_sequence</code>の<code>executeId</code></td></tr>
+      <tr><td rowspan="5"><code>im_startLoop</code></td><td><code>loopCount</code></td><td>繰り返し回数（数値または式の文字列）</td></tr>
+      <tr><td><code>loopItem</code></td><td>繰り返し対象要素の<code>executeId</code>（配列の出力を持つタスク等）</td></tr>
+      <tr><td><code>condition</code></td><td>継続条件のEL式</td></tr>
+      <tr><td><code>clearVariables</code></td><td>ループ開始時に初期化する変数名の配列</td></tr>
+      <tr><td><code>endPoint</code></td><td>対応する<code>im_endLoop</code>の<code>executeId</code>（<code>im_endLoop.startPoint</code>と対で相互参照する）</td></tr>
+      <tr><td><code>im_endLoop</code></td><td><code>startPoint</code></td><td>対応する<code>im_startLoop</code>の<code>executeId</code></td></tr>
+      <tr><td><code>im_variableOperation</code></td><td><code>continueOnError</code></td><td>エラー時に処理を継続するか</td></tr>
+      <tr><td rowspan="2"><code>im_logger</code></td><td><code>level</code></td><td>ログレベル（<code>ERROR</code>/<code>WARN</code>/<code>INFO</code>/<code>DEBUG</code>/<code>TRACE</code>）</td></tr>
+      <tr><td><code>continueOnError</code></td><td>エラー時に処理を継続するか</td></tr>
+      <tr><td rowspan="3"><code>im_callFlow</code></td><td><code>flowId</code></td><td>呼び出し先フローの<code>flowId</code></td></tr>
+      <tr><td><code>recursive</code></td><td>再帰呼び出しを許可するか</td></tr>
+      <tr><td><code>continueOnError</code></td><td>エラー時に処理を継続するか</td></tr>
+      <tr><td rowspan="2"><code>im_copyTo</code></td><td><code>overwrite</code></td><td>コピー先を上書きするか</td></tr>
+      <tr><td><code>continueOnError</code></td><td>エラー時に処理を継続するか</td></tr>
+      <tr><td rowspan="2"><code>im_writeTextToStorage</code> / <code>im_appendTextToStorage</code></td><td><code>charset</code></td><td>文字コード</td></tr>
+      <tr><td><code>continueOnError</code></td><td>エラー時に処理を継続するか</td></tr>
+      <tr><td><code>im_getFiles</code> / <code>im_removeStorage</code></td><td><code>recursive</code>, <code>continueOnError</code></td><td>再帰的に処理するか／エラー時に継続するか</td></tr>
+      <tr><td><code>im_sendTextMail</code></td><td><code>failOnError</code></td><td>エラー時に処理を失敗させるか</td></tr>
+      <tr><td>その他（<code>im_publicStorage</code>、<code>im_sessionStorage</code>、<code>im_getStorageInfo</code>、<code>im_readTextToStorage</code>、userDefinition要素 全般）</td><td><code>continueOnError</code></td><td>エラー時に処理を継続するか（多くの標準タスクに共通）</td></tr>
+    </tbody>
+  </table>
+  <p>制御要素（<code>im_start</code>、<code>im_end</code>、<code>im_gateway</code>、<code>im_startLoop</code>/<code>im_endLoop</code>）は<code>properties</code>内のID参照（<code>startPoint</code>/<code>endPoint</code>/<code>defaultRoot</code>等）によって相互関係を表現する。参照先の<code>executeId</code>を変更する場合は、関連する接続・制御要素側の参照値も合わせて更新する必要がある。</p>
+
+  <h2 class="h3 mt-4" id="s16">16. 生成・変更時の注意</h2>
+  <ul>
+    <li>フロー図のファイル名は<code>&lt;flowId&gt;-&lt;version&gt;.png</code>の形式で定義との対応を表す。</li>
+    <li><code>flowDefinitions</code>と<code>additional.ui</code>は二重JSON解析が必要である。</li>
+    <li>UIのノードID、<code>dataMap</code>、<code>graph.cells</code>内のリンク参照（<code>source.id</code>/<code>target.id</code>）は、フロー定義側の<code>executeId</code>・<code>startPoint</code>/<code>endPoint</code>と整合させる。</li>
+    <li>カテゴリID、フローID、バージョン、図ファイル名の対応を崩さない。</li>
+    <li><code>mappingOrder</code>・<code>versionComment</code>のようにエクスポート元によって有無が変わる項目があるため、キー欠落を前提に読み込み処理を実装する。</li>
+    <li>定数（<code>constants</code>）を追加・変更する場合は、定義自体だけでなく、各要素の<code>mappingDefinition.mappingRules</code>内の<code>$const/&lt;name&gt;</code>参照との整合性も確認する。</li>
+    <li>仕様の詳細は、利用するintra-mart環境のバージョンとエクスポート対象に応じて確認する。</li>
+  </ul>
+
+  <h2 class="h3 mt-4" id="s17">17. 対象範囲・未網羅事項</h2>
+  <p>本書は、ZIPの構造、フロー定義、デザイナ表示情報の一般的な仕様を対象とする。以下は本書の対象外であり、詳細を確認できていない。</p>
+  <ul>
+    <li>関数（11.5節）個々の<code>arguments</code>の型・順序（公式ドキュメントの各関数個別ページに記載があるが、本書には未転記）</li>
+    <li><code>key.version</code>（userDefinitionのバージョン固定）が非<code>null</code>となるケースの挙動。非<code>null</code>の実例は確認できていない</li>
+    <li>ユーザ定義タスクの処理種別のうち、<code>definitionData</code>の内部構造まで確認できているのは<code>"sql"</code>・<code>"javascript"</code>・<code>"rest"</code>の3種類のみ（20章）。他に8種類の処理種別が存在することは公式ドキュメントから分かっているが、内部構造は未確認（20.7節）</li>
+    <li><code>definitionType: "javascript"</code>のスクリプト実行環境で、制限対象APIの具体的な一覧（判定基準は20.5節を参照）</li>
+  </ul>
+  <p class="text-secondary small">「ユーザ定義タスク自体の登録フォーマット」は20章で解決した。</p>
+  <p>なお、フロー起動条件・トリガ（スケジュール実行やイベント起動等の設定）に関する記述は<code>flow_definition.json</code>内には見当たらない。フロー本体の定義のみが含まれ、起動条件はLogicDesigner外の別画面・別データで管理されている。少なくともスケジュール実行によるトリガは、別製品IM-JobSchedulerの<code>job-scheduler.xml</code>（<code>LogicFlowExecutorJob</code>というJavaジョブ経由でフローを呼び出す）が担う。詳細は<a href="logicdesigner-zip-spec-related.html">関連機能編</a>4章を参照。</p>
+  <p>これらは、必要に応じて製品ドキュメント等を基に、個別仕様として追記する。</p>
+
+  <h2 class="h3 mt-4" id="s18">18. 新規ZIP生成手順（実践ガイド）</h2>
+  <p>専用の生成ツールを介さず、本書の内容だけを頼りにゼロから<code>flow_definition.json</code>とZIPを組み立てる場合の実践的な手順をまとめる。</p>
+
+  <h3 class="h4 mt-4">18.1 全体の手順</h3>
+  <ol>
+    <li><code>flowCategories</code>を用意する（最低1件）。4章参照。</li>
+    <li>フロー定義オブジェクト（二重エンコード前の生JSONオブジェクト）を6章の項目一覧に従って組み立てる。<code>versionComment</code>・<code>mappingOrder</code>は省略可能で、迷う場合はキー自体を含めない方が安全（これらのキーを持たないエクスポートも存在する、6章）。</li>
+    <li><code>flowElements</code>を組み立てる。まず<code>im_start</code>から<code>im_end</code>までを<code>im_sequence</code>で一筆書きに繋ぎ、そのあとで分岐・ループ・タスクを追加していく。<code>executeId</code>はフロー内で一意にする（<code>im_sequence</code>の<code>executeId</code>は<code>&lt;startPoint&gt;_&lt;endPoint&gt;</code>形式が使われることが多いが、一意でありさえすれば必須の命名規則ではない）。</li>
+    <li>各要素の<code>mappingDefinition.mappingRules</code>を設定する（11章）。制御要素・接続要素の扱いは18.2節のスケルトンを参照。</li>
+    <li><code>additional.ui</code>（<code>graph.cells</code>・<code>dataMap</code>・<code>optionMap</code>）を<code>flowElements</code>から機械的に生成する。18.3〜18.4節参照。</li>
+    <li>フロー定義オブジェクトを<code>JSON.stringify</code>し、<code>flowDefinitions</code>配列の要素（文字列）として格納する（二重エンコード、5章）。</li>
+    <li>トップレベル<code>{ flowCategories, flowDefinitions }</code>をJSON化し、UTF-8で<code>flow_definition.json</code>として保存する。</li>
+    <li>18.5節のセルフチェックリストで整合性を確認する。</li>
+    <li>ZIPへパッケージングする（18.6節）。</li>
+  </ol>
+
+  <h3 class="h4 mt-4">18.2 最小フロー定義スケルトン</h3>
+  <p>実際のエクスポートZIP（<code>im_start</code>→<code>im_end</code>のみの最小フロー）に基づく、二重エンコード前のフロー定義オブジェクトの最小構成。新規フローはここから要素を追加していく。</p>
+  <pre class="bg-white border rounded p-3">{
+  "flowId": "flow001",
+  "version": 1,
+  "categoryId": "category001",
+  "flowName": "新規フロー",
+  "localizes": {},
+  "notes": null,
+  "transaction": true,
+  "validateRepositoryData": false,
+  "constants": [],
+  "variablesDataDefinition": {
+    "entrypoint": { "typeId": "root", "basic": false, "required": false, "listingType": "none" },
+    "typeDefinitions": [ { "id": "root", "properties": [] } ]
+  },
+  "inputDataDefinition": {
+    "entrypoint": { "typeId": "root", "basic": false, "required": false, "listingType": "none" },
+    "typeDefinitions": [ { "id": "root", "properties": [] } ]
+  },
+  "outputDataDefinition": {
+    "entrypoint": { "typeId": "root", "basic": false, "required": false, "listingType": "none" },
+    "typeDefinitions": [ { "id": "root", "properties": [] } ]
+  },
+  "flowElements": [
+    {
+      "executeId": "im_start",
+      "alias": null,
+      "key": { "type": "application", "id": "im_start", "version": null },
+      "label": "開始",
+      "comment": "",
+      "properties": {},
+      "mappingDefinition": { "mappingRules": [] }
+    },
+    {
+      "executeId": "im_end1",
+      "alias": null,
+      "key": { "type": "application", "id": "im_end", "version": null },
+      "label": "終了",
+      "comment": "",
+      "properties": {},
+      "mappingDefinition": { "mappingRules": [] }
+    },
+    {
+      "executeId": "im_start_im_end1",
+      "alias": null,
+      "key": { "type": "application", "id": "im_sequence", "version": null },
+      "label": null,
+      "comment": null,
+      "properties": { "startPoint": "im_start", "endPoint": "im_end1" },
+      "mappingDefinition": null
+    }
+  ],
+  "additional": { "ui": "（18.3節参照。二重エンコードしたJSON文字列を格納）" }
+}</pre>
+  <p><code>im_start</code>・<code>im_end</code>は<code>mappingDefinition.mappingRules: []</code>を持つ（<code>null</code>ではない）。<code>mappingDefinition</code>が<code>null</code>になるのは<code>im_sequence</code>のような接続専用要素のみである（10.1節）。</p>
+
+  <h3 class="h4 mt-4">18.3 additional.ui 最小テンプレート</h3>
+  <p>18.2節のスケルトンに対応する<code>additional.ui</code>（二重エンコード前）の内容。<code>graph.cells</code>のノードIDはUUID形式の新規文字列を発行して使う。</p>
+  <pre class="bg-white border rounded p-3">{
+  "version": 2,
+  "graph": {
+    "cells": [
+      {
+        "type": "devs.StartModel",
+        "size": { "width": 200, "height": 50 },
+        "inPorts": ["in"], "outPorts": ["out"],
+        "position": { "x": 50, "y": 50 },
+        "id": "&lt;新規UUID: startノード&gt;",
+        "z": 1,
+        "attrs": {
+          "rect.title": { "width": 150 },
+          "text.title": { "text": "im_start" },
+          "text.label": { "text": "開始" },
+          ".inPorts>.port0>.port-label": { "text": "in" },
+          ".inPorts>.port0>.port-body": { "port": { "id": "in", "type": "in" } },
+          ".outPorts>.port0>.port-label": { "text": "out" },
+          ".outPorts>.port0>.port-body": { "port": { "id": "out", "type": "out" } }
+        }
+      },
+      {
+        "type": "devs.EndModel",
+        "size": { "width": 200, "height": 50 },
+        "inPorts": ["in"], "outPorts": ["out"],
+        "position": { "x": 50, "y": 450 },
+        "id": "&lt;新規UUID: endノード&gt;",
+        "z": 2,
+        "attrs": {
+          "rect.title": { "width": 150 },
+          "text.title": { "text": "im_end1" },
+          "text.label": { "text": "終了" },
+          ".inPorts>.port0>.port-label": { "text": "in" },
+          ".inPorts>.port0>.port-body": { "port": { "id": "in", "type": "in" } },
+          ".outPorts>.port0>.port-label": { "text": "out" },
+          ".outPorts>.port0>.port-body": { "port": { "id": "out", "type": "out" } }
+        }
+      },
+      {
+        "type": "link",
+        "source": { "id": "&lt;新規UUID: startノード&gt;", "port": "out" },
+        "target": { "id": "&lt;新規UUID: endノード&gt;", "port": "in" },
+        "id": "&lt;新規UUID: リンク&gt;",
+        "z": 3,
+        "attrs": { ".link-tools>.link-tool>.tool-remove": { "display": "" } }
+      }
+    ]
+  },
+  "dataMap": {
+    "&lt;新規UUID: startノード&gt;": {
+      "metadata": {
+        "key": { "type": "application", "id": "im_start" },
+        "elementProperties": [
+          { "propertyName": "executeId", "enable": true, "required": true, "array": false, "label": "executeId", "options": [] },
+          { "propertyName": "alias", "enable": true, "required": false, "array": false, "label": "alias", "options": [] }
+        ],
+        "inputDataDefinition": null, "outputDataDefinition": null
+      },
+      "common": { "executeId": "im_start", "alias": "im_start", "label": "開始", "comment": "" },
+      "typical": {},
+      "mapping": { "inputKeys": ["$input", "$variable", "$const"], "additionalKeys": [], "json": {} }
+    },
+    "&lt;新規UUID: endノード&gt;": { "...": "im_startと同様の形式。key.idはim_end" }
+  },
+  "optionMap": {
+    "&lt;新規UUID: startノード&gt;": { "title": "im_start", "label": "開始", "inNum": 1, "outNum": 1 },
+    "&lt;新規UUID: endノード&gt;": { "title": "im_end1", "label": "終了", "inNum": 1, "outNum": 1 }
+  }
+}</pre>
+  <p>タスク要素（<code>devs.ProcModel</code>）のノードは、<code>attrs</code>に<code>rect.title</code>を持たない点を除き、<code>StartModel</code>/<code>EndModel</code>とほぼ同形式である。<code>position</code>は自由に決めてよく、崩れた配置でも動作には影響しない。まずは実行順に沿って縦方向へ一定間隔（例: Y座標を100〜150刻みで増加）に並べる簡易レイアウトで問題ない。<code>z</code>はノード・リンクの重なり順で、生成順に連番を振れば足りる。</p>
+  <div class="alert alert-danger" role="alert">要素が<code>mappingDefinition.mappingRules</code>を持つ場合、<code>dataMap[uiNodeId].mapping.json</code>を<code>{}</code>のまま省略してはならない。省略した場合、ZIPのインポート自体は成功しても、デザイナでフローを開いて保存した時点で<code>mappingRules</code>が消去される。<code>mapping.json</code>の正しい構造は12.5節を参照。<code>mappingRules</code>を持たない要素（<code>im_start</code>や、入力を持たないタスクなど）については、<code>mapping.json</code>を空のままにしても問題ない。</div>
+
+  <h3 class="h4 mt-4">18.4 要素追加時の「3点セット」</h3>
+  <p>フローに要素を1つ追加するたびに、次の3か所を必ず同時に更新する。いずれかを欠くと、<code>flowElements</code>とUI情報（<code>additional.ui</code>）の対応が崩れる。</p>
+  <ol>
+    <li><code>flowElements</code>配列に新しい要素を追加する</li>
+    <li>実行順を表す<code>im_sequence</code>要素を追加・更新し、前後の要素の<code>executeId</code>を<code>startPoint</code>/<code>endPoint</code>で正しく参照する</li>
+    <li><code>additional.ui</code>の<code>graph.cells</code>（新規ノード＋関連する<code>link</code>）・<code>dataMap</code>・<code>optionMap</code>に対応エントリを追加する（<code>im_sequence</code>要素自体は<code>graph.cells</code>の<code>link</code>としてのみ表現し、<code>dataMap</code>・<code>optionMap</code>には追加しない。12.2節参照）。追加した要素が<code>mappingRules</code>を持つ場合は、<code>dataMap[uiNodeId].mapping.json</code>にも同じ内容を反映する（12.5節）</li>
+  </ol>
+
+  <h3 class="h4 mt-4">18.5 生成後セルフチェックリスト</h3>
+  <p>ZIP化する前に、生成した<code>flow_definition.json</code>（二重エンコード前の状態）に対して確認する。</p>
+  <ul>
+    <li>各<code>flowElements[].executeId</code>がフロー内で重複していないか</li>
+    <li><code>im_sequence</code>／<code>im_startLoop</code>／<code>im_endLoop</code>／<code>im_gateway</code>の<code>properties</code>内で参照する<code>executeId</code>（<code>startPoint</code>/<code>endPoint</code>/<code>defaultRoot</code>等）が、実在する要素の<code>executeId</code>と一致しているか</li>
+    <li><code>additional.ui</code>の<code>graph.cells</code>内<code>link</code>の<code>source.id</code>/<code>target.id</code>が、対応するノードの<code>id</code>（<code>dataMap</code>のキー）と一致しているか</li>
+    <li><code>dataMap</code>・<code>optionMap</code>のキー（UIノードID）が、<code>graph.cells</code>内の対応するノードの<code>id</code>と一致しているか</li>
+    <li><code>im_sequence</code>を除く<code>flowElements</code>の件数と、<code>dataMap</code>・<code>optionMap</code>のエントリ数が一致しているか</li>
+    <li><code>mappingDefinition.mappingRules[].target</code>・<code>source</code>内の<code>path</code>が指す先（他要素の<code>executeId</code>、<code>$variable</code>/<code>$const</code>/<code>$input</code>/<code>$output</code>の名前）が実在するか</li>
+    <li><code>constants</code>を追加・変更した場合、対応する<code>$const/&lt;name&gt;</code>参照側と整合しているか（16章）</li>
+    <li><code>mappingRules</code>を持つ要素について、対応する<code>dataMap[uiNodeId].mapping.json</code>の<code>connectors</code>が、<code>mappingRules</code>と同じ件数・同じ<code>id</code>で存在するか（12.5節。ここが不整合だとデザイナでの再保存時にルールが消える）</li>
+    <li>フロー定義オブジェクト・<code>additional.ui</code>それぞれが、単体で正しくJSONパースできるか（二重エンコードの崩れがないか）</li>
+    <li><code>flowId</code>・<code>version</code>・<code>categoryId</code>が、<code>flowCategories</code>および同一ZIP内の既存フローと矛盾しないか</li>
+  </ul>
+
+  <h3 class="h4 mt-4">18.6 ZIPパッケージング時の注意</h3>
+  <ul>
+    <li><code>flow_definition.json</code>はUTF-8で保存し、ZIPのルート直下に配置する（2章）。</li>
+    <li>フロー図（<code>flow_diagram/&lt;flowId&gt;-&lt;version&gt;.png</code>）を含めるかどうかは18.7節を参照。含めない場合はディレクトリごと省略してよい（2章のとおり、件数の不一致は許容される）。</li>
+    <li>二重エンコードした文字列（<code>flowDefinitions</code>の各要素、<code>additional.ui</code>）の中に、エスケープされていない実改行や制御文字を含めない。</li>
+  </ul>
+
+  <div class="alert alert-info" role="alert">
+    <strong>18.7 生成・保存にまつわる補足事項</strong>
+    <ul class="mb-0">
+      <li><code>flow_diagram</code>ディレクトリを含めない状態、標準的な圧縮方式（特別なファイル順序の調整なし）でも、ZIPのインポートは行える。</li>
+      <li><strong><code>dataMap[uiNodeId].mapping.json</code>を<code>{}</code>のまま省略すると危険。</strong>ZIPのインポート自体は成功するが、そのフローをデザイナで開いて保存した時点で、対応する<code>flowElements[].mappingDefinition.mappingRules</code>が消去される（マッピング先の出力が全て<code>null</code>になる）。正しい構造は12.5節を参照。</li>
+      <li>フロー図（PNG）は、エクスポート時にツール側が自動生成する。インポート時にPNGの有無は問われないと見られる。</li>
+      <li><code>additional.ui</code>内で独自に発行したUUID（ノードID等）は、インポート後もそのまま維持される（デザイナ側で再発行されることはない）。</li>
+      <li>ノードの<code>position</code>（座標）は、簡易な配置でも動作上の問題は生じない。</li>
+      <li>デザイナで一度保存すると、<code>properties</code>内で既定値（例: <code>continueOnError: false</code>）のキーが省略される、<code>mappingOrder</code>が明示的に付与される（値の例: <code>SOURCE_HIERARCHY</code>）など、正規化が行われる場合がある。生成時にこれらのキーを明示していても、インポート・動作には影響しないと見られる。</li>
+    </ul>
+  </div>
+
+  <h2 class="h3 mt-4" id="s19">19. 設計書エクスポート（Excel）とZIPの対応</h2>
+  <p>IM-LogicDesignerの画面には、本書が対象とするZIPエクスポートとは別に、フロー1件を人間可読な形式でまとめた「設計書」をExcel（.xlsx）としてエクスポートする機能がある。業務で使用する設計書からこのExcel設計書へ情報を転記し、そのExcel設計書をもとにZIP（<code>flow_definition.json</code>）を組み立てる、という流れを想定する場合、両者の対応関係を把握しておく必要がある。本章は、Excel設計書とZIPの実データを突き合わせた対応関係をまとめる。</p>
+
+  <h3 class="h4 mt-4">19.1 シートとZIP側項目の対応表</h3>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>Excelシート</th><th>対応するZIP側の項目</th><th>備考</th></tr></thead>
+    <tbody>
+      <tr><td>表紙</td><td>（対応なし）</td><td>タイトルページのみ。ZIP側に対応する項目はない</td></tr>
+      <tr><td>フロー概要</td><td>フロー定義オブジェクトの直下項目（6章）</td><td>「フロー定義ID」→<code>flowId</code>、「フロー定義名」→<code>flowName</code>、「バージョン」→<code>version</code>、「備考」→<code>notes</code>、「フローカテゴリID/名」→<code>categoryId</code>（および対応する<code>flowCategories</code>要素の<code>categoryName</code>）、「フロー定義名(多言語情報)」→<code>localizes</code>、「トランザクションの使用」→<code>transaction</code>、「IM-Repository 定義の入力値の検証」→<code>validateRepositoryData</code>。<strong>「作成者」「作成日時」「更新者」「更新日時」はZIP側の<code>flow_definition.json</code>には存在しない</strong>（6章）</td></tr>
+      <tr><td>フロー図</td><td><code>flow_diagram/&lt;flowId&gt;-&lt;version&gt;.png</code></td><td>デザイナ上のフロー図（2章・14章）に対応</td></tr>
+      <tr><td>入出力値</td><td><code>inputDataDefinition</code> / <code>outputDataDefinition</code></td><td>ツリー表記（<code>┠</code>/<code>┗</code>）の階層が<code>typeDefinitions</code>のネストに対応。<code>&lt;object&gt;</code>は複合型（<code>basic:false</code>）、<code>&lt;object[]&gt;</code>は複合型かつ<code>listingType:"list"</code>、<code>&lt;string&gt;</code>等の基本型名は<code>typeId</code>にそのまま対応（9章）</td></tr>
+      <tr><td>変数</td><td><code>variablesDataDefinition</code></td><td>入出力値シートと同形式。「変数名」「説明」は<code>properties[].name</code>・<code>properties[].description</code>に対応</td></tr>
+      <tr><td>定数値</td><td><code>constants</code></td><td>「定数ID」→<code>name</code>、「定数値」→<code>value</code>、「データ型」→<code>typeId</code>、「共通定数」→<code>common</code>、「説明」→<code>description</code>（8章と1対1で対応）</td></tr>
+      <tr><td>エレメント一覧</td><td><code>flowElements</code></td><td>「タスクID」→<code>executeId</code>、「エイリアス」→<code>alias</code>、「ラベル」→<code>label</code>、「タスク種別」→<code>key.id</code>に相当する種別の日本語表示名、「コメント」→<code>comment</code>。「マッピング: あり/なし」は<code>mappingDefinition.mappingRules</code>が空か否かの表示、「例外処理」は<code>continueOnError</code>等の設定有無、「固有設定」は<code>properties</code>内の値（ループ回数・条件式等）をテキスト化したもの（10章・15章）</td></tr>
+      <tr><td>データマッピング</td><td><code>flowElements[].mappingDefinition.mappingRules</code></td><td>「対象」→<code>target</code>、「入力データ」→<code>source.path</code>（11章）。<strong>このシートは<code>source.type:"value"</code>（単純参照）のみを表形式で表示しており、<code>source.type:"function"</code>（関数呼び出し・ネスト式）を含むマッピングをこの表だけから機械的に再構築できるかは未確認</strong>。関数を使うマッピングがある場合は、Excel設計書の別途の記載（本サンプルには該当なし）や元の業務設計書側の情報を合わせて参照する必要がある可能性が高い</td></tr>
+      <tr><td>関連（呼び出し元／呼び出し先）</td><td>（間接対応）<code>im_callFlow</code>要素の<code>properties.flowId</code></td><td>ZIP側では個々のフローが「どこから呼ばれるか」を持たず、呼び出し元情報はテナント内の全フローを横断的に解析しないと得られない（<code>im_callFlow</code>を持つ他フローを探す必要がある）。設計書側はエクスポート時点で解決済みの参照一覧を表示していると考えられる</td></tr>
+      <tr><td>REST API定義／REST API レスポンスヘッダ</td><td><code>flow_route.json</code>の各エントリ</td><td><code>flow_definition.json</code>にはフローの呼び出し方法（ルーティング・認証方式等）は一切含まれない（17章）。この設計書の内容は、独立したZIP形式（<code>flow_route.json</code>）に対応する。詳細は<a href="logicdesigner-zip-spec-route.html">ルーティング定義編</a>を参照</td></tr>
+      <tr><td>トリガ定義／トリガマッピング</td><td>（ZIP外）</td><td>本サンプルでは空欄だが、項目自体はテンプレートとして存在する。REST API定義と同様、ZIP外で管理される起動設定に対応すると考えられる（17章）</td></tr>
+      <tr><td>ユーザ定義（概要／入出力値／SQL定義）</td><td><code>flowElements[].key.type: "userDefinition"</code>が参照する定義本体、または<code>localUserDefinition.properties.definition</code></td><td>「利用範囲: 共通のユーザ定義として利用する」という記載は、<code>key.type: "userDefinition"</code>（テナント共有・ZIP外管理、10.4節）に対応すると考えられる。「ユーザ定義ID/名/バージョン/カテゴリID/カテゴリ名/ソート番号」は<code>properties.definition</code>の同名項目（<code>definitionId</code>/<code>definitionName</code>/<code>version</code>/<code>categoryId</code>/<code>sortNumber</code>、10.5節）と1対1。「ユーザ定義種別: sql」は<code>definitionType</code>に対応。「SQL定義」内の「データベース種別」「接続ID」「クエリ種別」「範囲指定」「クエリ」は、それぞれ<code>definitionData.elementProperties</code>の<code>databaseType</code>・<code>connectId</code>・<code>queryType</code>・<code>limitation</code>・<code>query</code>に対応（10.5節参照）。「作成者」「作成日時」「更新者」「更新日時」は、フロー概要シートと同様にZIP側には存在しない</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="h4 mt-4">19.2 Excel設計書からZIPを組み立てる際の注意</h3>
+  <ul>
+    <li>Excel設計書には作成者・作成日時・更新者・更新日時などの管理情報が含まれるが、これらはZIP側のスキーマに存在しないため、ZIP組み立て時は単純に無視してよい。</li>
+    <li>「データマッピング」シートは単純な値参照（<code>source.type:"value"</code>）を表形式で網羅する設計になっているとみられ、関数呼び出し（<code>im_string_concat</code>等、11.5節）を伴う複雑な式がある場合、この表だけでは再現しきれない可能性がある。複雑な式が必要な要素は、元の業務設計書や補足情報を別途確認する。</li>
+    <li>REST API定義はフロー本体のZIP（<code>flow_definition.json</code>）の対象外である。Excel設計書のこの記載は、別ファイル（<a href="logicdesigner-zip-spec-route.html">ルーティング定義編</a>）が扱う<code>flow_route.json</code>側に反映する。トリガ定義は、対応するZIP形式が確認できていないため、ZIP生成の観点では読み飛ばしてよい項目である。</li>
+    <li>「ユーザ定義」シートが「共通のユーザ定義として利用する」となっている場合、そのタスクはテナントに個別登録されたユーザ定義（<code>key.type:"userDefinition"</code>）として扱われ、ZIP側の該当<code>flowElements</code>要素は定義本体を持たず<code>key.id</code>で参照するのみになる（10.4節）。ZIP生成時に定義本体（SQL文等）をどこまで埋め込む必要があるか（<code>localUserDefinition</code>化するか、テナント側に登録済みの<code>userDefinition</code>として参照だけにするか）は、対象タスクの利用範囲の記載に従って判断する。</li>
+    <li>シート構成や項目名はテンプレートの版によって異なる可能性があるため、実際に使用するExcel設計書と齟齬がないか都度確認する。</li>
+  </ul>
+
+</main>
+</body>
+</html>
