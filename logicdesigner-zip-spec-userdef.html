@@ -94,7 +94,7 @@
   <p>フロー定義編の<code>flowCategories</code>（4章）とほぼ同形式だが、次の相違点がある。</p>
   <ul>
     <li><code>iconId</code>を持つ（<code>flowCategories</code>にはない項目）。サンプルでは空文字列</li>
-    <li><code>parentId</code>を持たない。ユーザ定義カテゴリが<code>flowCategories</code>同様の親子ツリー構造をサポートするかは未確認（公式の「IM-LogicDesigner仕様書」「4.2.3. ユーザカテゴリ」にも親子構造に関する記載はなく、フラットな分類のみの可能性がある）</li>
+    <li><code>parentId</code>を持たない。製品パッケージ内のユーザ定義カテゴリ編集画面の入力チェック定義を確認したところ、<code>categoryId</code>・<code>categoryName</code>・<code>localizes</code>のみが対象で親カテゴリを指定する項目はなく、ユーザ定義カテゴリは<code>flowCategories</code>のような親子ツリー構造をサポートしていないと見られる</li>
   </ul>
 
   <h2 class="h3 mt-4" id="s5">5. userDefinitions と definitionオブジェクト</h2>
@@ -155,7 +155,20 @@
     <li>システムプロセスの呼び出しや外部スクリプトの呼び出しを行うAPI</li>
     <li>画面遷移を伴うAPI</li>
   </ul>
-  <p>制限対象APIの具体的な一覧はドキュメントには明記されておらず、製品内の denylist 設定（<code>WEB-INF/classes/META-INF/logic/jssp/blacklist</code>）で管理されている。</p>
+  <p>制限対象APIの具体的な一覧はドキュメントには明記されていないが、製品パッケージ（WARファイル）内の denylist 設定ファイル<code>WEB-INF/classes/META-INF/logic/jssp/blacklist</code>で管理されており、次のグローバルオブジェクト・識別子が禁止されている。</p>
+  <pre class="bg-white border rounded p-3">java, Packages, loadClass, readFile, readUrl, seal, serialize, spawn, sync, version,
+execute, forward, garbageCollector, include, load, redirect, secureRedirect, transmission,
+Content, File, ImAjaxUtil, LicenseRegister, Web, SystemDatabase, Transfer, Module, Procedure,
+PageManager, AdministratorManager, TenantLicense, SystemStorage, TenantInfoManager, WorkManager,
+Client, Permanent, #ImJson, PluginManager, VirtualTenantSwitcher, Imart,
+CustomerSuccessLicense, ImServiceRestrictor,
+
+# v7.2 (compatible)
+BatchManager, BatchServer, System, DataSourceMappingConfigurater, JsTestSuite, JsUnit,
+ResinDataSourceConfigurater, Batch, AccessSecurityManager, ActiveSessionManager,
+DuplicateLoginManager, LicenseManager, LoginBlockManager, LoginGroupManager, AdminMenuManager,
+AdminUserManager, ShortCutManager, WSAccessManager</pre>
+  <p class="text-secondary small"><code>java</code>・<code>Packages</code>・<code>loadClass</code>（Rhinoの組み込みオブジェクトでJavaクラスへ任意アクセスするための機能）、<code>execute</code>・<code>spawn</code>・<code>sync</code>（プロセス実行系）、<code>forward</code>・<code>redirect</code>・<code>secureRedirect</code>・<code>transmission</code>（画面遷移系）、<code>SystemDatabase</code>・<code>SystemStorage</code>・<code>AdministratorManager</code>等（システム管理系API）が含まれており、7章で述べた3つの制限基準（システム管理系API・外部プロセス呼び出し・画面遷移を伴うAPI）と対応している。</p>
 
   <h2 class="h3 mt-4" id="s8">8. definitionType: "rest"</h2>
   <p><code>definitionType: "rest"</code>の場合、<code>definitionData.elementId</code>は<code>"im_httpclient"</code>で、外部REST APIをHTTP呼び出しするための設定を<code>elementProperties</code>に持つ。</p>
@@ -208,22 +221,23 @@
   <div class="alert alert-info" role="alert"><code>locale</code>は、フロー定義編9.2節の基本型一覧に未掲載の型である。公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/routing/index.html">「4.3.14. JSON上でのデータの表現」</a>（ルーティング定義編のREST API入出力に関する節）には、<code>locale</code>（ロケールIDを表す文字列）を含む基本型の対応表が掲載されており、これはフロー定義編9.2節の基本型一覧よりも広い型セットである。テンプレート処理時のロケール（<code>localizedTemplate</code>のどのロケール版を使うか等に関わると考えられる）を表す基本型と見られる。</div>
 
   <h2 class="h3 mt-4" id="s10">10. その他のdefinitionType（未確認）</h2>
-  <p>公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/user_definition/index.html">「4.2.5.1. タイプ別詳細仕様」</a>によると、ユーザ定義タスクの処理種別は全<strong>17種類</strong>存在する。本書で<code>definitionData</code>の内部構造（<code>elementId</code>・<code>elementProperties</code>の実際の値）まで確認できているのは<code>"sql"</code>・<code>"javascript"</code>・<code>"rest"</code>・<code>"template"</code>の4種類のみで、残る13種類は次のとおり（画面上の機能名。括弧内は同仕様書に基づく概要）。<code>definitionType</code>文字列や<code>elementId</code>等の内部識別子は、いずれの処理種別についても製品ドキュメントには明記されておらず、ZIPの実データでの確認が必要である。</p>
+  <p>公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/user_definition/index.html">「4.2.5.1. タイプ別詳細仕様」</a>によると、ユーザ定義タスクの処理種別は全<strong>17種類</strong>存在する。本書で<code>definitionData</code>の内部構造（<code>elementId</code>・<code>elementProperties</code>の実際の値）まで確認できているのは<code>"sql"</code>・<code>"javascript"</code>・<code>"rest"</code>・<code>"template"</code>の4種類のみで、残る13種類は次のとおり（画面上の機能名。括弧内は同仕様書に基づく概要）。<code>definitionType</code>文字列や<code>elementId</code>等の内部識別子はZIPの実データでの確認が必要だが、製品パッケージ内の編集画面の入力チェック定義から、一部の処理種別については<code>elementProperties</code>の項目名まで確認できている（下記「確認済み項目」）。</p>
   <ul>
-    <li>ストアド（ストアドプロシージャの実行。データベース種別として<code>TENANT</code>・<code>SHARED</code>を指定）</li>
-    <li>Database Fetch（SQLクエリの実行結果をフェッチサイズ単位で分割取得し、繰り返し処理する）</li>
+    <li>ストアド（ストアドプロシージャの実行。データベース種別として<code>TENANT</code>・<code>SHARED</code>を指定。確認済み項目: <code>connectId</code>）</li>
+    <li>Database Fetch（SQLクエリの実行結果をフェッチサイズ単位で分割取得し、繰り返し処理する。確認済み項目: <code>fetchSize</code>・<code>connectId</code>）</li>
     <li>CSV Fetch（CSVファイルを読み込み、レコード単位の繰り返し処理を行う）</li>
-    <li>CSV出力（レコードをCSVファイルへ出力する。一括出力・繰り返し要素での追記の両方に対応）</li>
+    <li>CSV出力（レコードをCSVファイルへ出力する。一括出力・繰り返し要素での追記の両方に対応。確認済み項目: <code>encoding</code>・<code>quoteCharacter</code>・<code>delimiterCharacterText</code>・<code>endOfLineSymbolsText</code>、出力列定義側に<code>paramName</code>）</li>
     <li>Excel入力（Excelファイルの指定セル・範囲からデータを読み込む）</li>
     <li>Excel出力（テンプレートファイルまたは新規ファイルへ、指定セル・範囲でデータを書き込む）</li>
     <li>XML解析（XMLを読み込み、階層指定またはXPathで任意の要素を取得する。DTD使用のXMLは非対応）</li>
     <li>HTML解析（HTMLを読み込み、階層指定またはCSSセレクタで任意の要素を取得する）</li>
     <li>Salesforceオブジェクト操作（SalesforceオブジェクトへのCREATE/READ/UPDATE/DELETE）</li>
     <li>Salesforce SOQL（SOQLによるクエリ実行。ページネーション対応）</li>
-    <li>Salesforceバッチ（Bulk APIによるジョブへのバッチ追加。Insert/Update/Upsert/Delete/HardDelete）</li>
+    <li>Salesforceバッチ（Bulk APIによるジョブへのバッチ追加。Insert/Update/Upsert/Delete/HardDelete。製品パッケージ内のアイコンリソースを見る限り、ジョブ作成・ジョブクローズ・ジョブ中断・バッチ情報取得・バッチ情報一覧取得・バッチ結果取得・ジョブ情報取得の少なくとも7つの操作に個別のアイコンが用意されており、単一のタスクではなく操作ごとに細分化されている可能性がある）</li>
     <li>BIS申請/承認（IM-BISワークフローの起票・申請・再申請・承認等の処理）</li>
     <li>Forma登録情報（Formaアプリケーションの登録データの取得・登録・更新）</li>
   </ul>
+  <p class="text-secondary small">共通項目として、<code>definitionId</code>・<code>definitionName</code>・<code>localizes</code>・<code>categoryId</code>・<code>sortNumber</code>は全処理種別で共通の入力項目であることも、同じ確認から判明している（6章の一覧と整合）。</p>
 
   <h2 class="h3 mt-4" id="s11">11. 新規ユーザ定義ZIP生成手順（実践ガイド）</h2>
   <p>フロー定義編18章と同様、専用の生成ツールを介さず、本書の内容だけを頼りにゼロから<code>user_definition.json</code>とZIPを組み立てる場合の実践的な手順をまとめる。</p>
@@ -300,9 +314,7 @@
 
   <h2 class="h3 mt-4" id="s12">12. 未検証事項</h2>
   <ul>
-    <li><code>userCategories</code>が親子ツリー構造（<code>flowCategories</code>同様の<code>parentId</code>）をサポートするか。</li>
-    <li>10章で挙げた13種類の<code>definitionType</code>文字列そのもの、および<code>definitionData</code>の内部構造。</li>
-    <li>JavaScript実行環境における制限対象APIの具体的な一覧（判定基準は7章で確認できているが、個別のAPI名は製品ドキュメントに明記されていない）。</li>
+    <li>10章で挙げた13種類の<code>definitionType</code>文字列そのもの、および<code>elementId</code>（一部の<code>elementProperties</code>項目名は製品パッケージの解析から判明済み）。</li>
     <li><code>outputDataDefinition</code>の<code>body</code>型定義が、呼び出し先レスポンスの変化に応じてどう更新されるか（再度「JSON入力」が必要かなど）。</li>
     <li><code>icon_data/</code>（2章）の<code>iconId</code>とファイル名の具体的な対応関係（画像ファイル形式・サイズは4.2.4節の公式情報から判明済み）。</li>
     <li>本章の手順で生成したZIP単体（フローを介さず、ユーザ定義ZIP自体）をインポートし、デザイナで開いて保存した場合に、フロー定義編で見られたような正規化（既定値の省略等）が同様に起きるか。</li>
