@@ -94,7 +94,7 @@
   <p>フロー定義編の<code>flowCategories</code>（4章）とほぼ同形式だが、次の相違点がある。</p>
   <ul>
     <li><code>iconId</code>を持つ（<code>flowCategories</code>にはない項目）。サンプルでは空文字列</li>
-    <li><code>parentId</code>を持たない。製品パッケージ内のユーザ定義カテゴリ編集画面の入力チェック定義を確認したところ、<code>categoryId</code>・<code>categoryName</code>・<code>localizes</code>のみが対象で親カテゴリを指定する項目はなく、ユーザ定義カテゴリは<code>flowCategories</code>のような親子ツリー構造をサポートしていないと見られる</li>
+    <li><code>parentId</code>を持たない。ユーザ定義カテゴリの管理項目は<code>categoryId</code>・<code>categoryName</code>・<code>localizes</code>のみで、親カテゴリを指定する項目がなく、<code>flowCategories</code>のような親子ツリー構造を持たない</li>
   </ul>
 
   <h2 class="h3 mt-4" id="s5">5. userDefinitions と definitionオブジェクト</h2>

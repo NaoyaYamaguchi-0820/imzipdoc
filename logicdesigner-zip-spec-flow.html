@@ -222,14 +222,15 @@
       <tr><td><code>boolean</code></td><td>真偽値</td></tr>
       <tr><td><code>date</code></td><td>日付</td></tr>
       <tr><td><code>sqldate</code></td><td>SQL日付型（データベース連携タスクの入出力で使用）</td></tr>
-      <tr><td><code>byte</code></td><td>バイト列（バイナリデータ）</td></tr>
+      <tr><td><code>byte</code></td><td>数値（1バイト整数）。バイナリデータ（バイト列）を表す型ではない</td></tr>
+      <tr><td><code>binary</code></td><td>バイナリデータ（バイト列）。<code>im_chat</code>要素の画像添付フィールドなど、実際のバイナリ値を扱う入出力で使用</td></tr>
       <tr><td><code>storage</code></td><td>ストレージ上のファイル・ディレクトリを指すパス値（<code>im_publicStorage</code>等のストレージ系タスクの出力型）</td></tr>
       <tr><td><code>map</code></td><td>マップ（キー・バリュー構造）</td></tr>
       <tr><td><code>any</code></td><td>任意の型（型を特定しない値）。REST呼び出しタスク（<code>im_httpclient</code>、<a href="logicdesigner-zip-spec-userdef.html#s8">ユーザ定義編8章</a>）の型定義一覧に参照用として現れる</td></tr>
     </tbody>
   </table>
   <p>上記以外の<code>typeId</code>は独自定義の複合型（<code>typeDefinitions</code>内の<code>id</code>）を指す。命名は自動採番（<code>im_logic_object_N</code>）またはユーザ指定名になる。</p>
-  <div class="alert alert-info" role="alert">上表は実際のフロー定義ZIPから確認できた基本型である。公式の「IM-LogicDesigner仕様書」<a href="logicdesigner-zip-spec-route.html#s5">「4.3.14. JSON上でのデータの表現」（ルーティング定義編5章に型対応表を転記）</a>によると、基本型にはこのほかにも<code>short</code>・<code>long</code>・<code>float</code>・<code>bigdecimal</code>・<code>biginteger</code>・<code>locale</code>（<a href="logicdesigner-zip-spec-userdef.html#s9">ユーザ定義編9章</a>参照）・<code>timezone</code>・<code>calendar</code>・<code>imdatetime</code>・<code>imduration</code>・<code>sqltimestamp</code>・<code>binary</code>・<code>object</code>が存在する。これらは実際のフロー定義ZIPのサンプルでは未観測のため、上表には含めていない。</div>
+  <div class="alert alert-info" role="alert">上表は実際のフロー定義ZIPから確認できた基本型である。公式の「IM-LogicDesigner仕様書」<a href="logicdesigner-zip-spec-route.html#s5">「4.3.14. JSON上でのデータの表現」（ルーティング定義編5章に型対応表を転記）</a>によると、基本型にはこのほかにも<code>short</code>・<code>long</code>・<code>float</code>・<code>bigdecimal</code>・<code>biginteger</code>・<code>locale</code>（<a href="logicdesigner-zip-spec-userdef.html#s9">ユーザ定義編9章</a>参照）・<code>timezone</code>・<code>calendar</code>・<code>imdatetime</code>・<code>imduration</code>・<code>sqltimestamp</code>・<code>object</code>が存在する。これらは実際のフロー定義ZIPのサンプルでは未観測のため、上表には含めていない。</div>
 
   <h3 class="h4 mt-4">9.3 配列・単一項目</h3>
   <ul>
