@@ -97,7 +97,7 @@
       <tr><td><code>authenticationParam</code></td><td>文字列または<code>null</code></td><td>認証方式に応じた追加パラメータ。<code>IMAuthentication</code>では<code>null</code>。Basic認証・OAuthの場合に指定する値の形式は未確認</td></tr>
       <tr><td><code>authzUri</code></td><td>文字列</td><td>認可URI。<code>im-logic-rest://&lt;route&gt;</code>形式。IM-Authzによる認可判定に使われ、公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/routing/index.html">「4.3. フロールーティング」</a>によると、異なるフロールーティング間で同一の認可URIを指定することはできない（一意である必要がある）</td></tr>
       <tr><td><code>secured</code></td><td>真偽値</td><td>セキュアトークンを使用するか。有効にすると、リクエストヘッダ<code>X-Intramart-Secure-Token</code>またはリクエストパラメータ<code>im_secure_token</code>によるトークンチェックが行われる。トークンは同一セッション内で発行・使用する必要がある</td></tr>
-      <tr><td><code>responseType</code></td><td>文字列</td><td>レスポンスの変換方式。公式ドキュメントによると9種類存在する: JSON変換（内部識別子<code>imJsonResponse</code>）、テキスト（内部識別子<code>imTextResponse</code>。出力データの<code>body</code>プロパティ値をそのまま返す）、HTML、XML、JSON文字列、任意Content-Type、ファイルダウンロード、ファイルインライン表示、ファイルバイナリ返却。内部識別子は<code>im&lt;種別名&gt;Response</code>の命名パターンと見られるが、テキスト・JSON変換以外の7種類は未確認</td></tr>
+      <tr><td><code>responseType</code></td><td>文字列</td><td>レスポンスの変換方式。公式ドキュメントによると9種類存在する: JSON変換（内部識別子<code>imJsonResponse</code>）、テキスト（内部識別子<code>imTextResponse</code>。出力データの<code>body</code>プロパティ値をそのまま返す）、HTML（内部識別子<code>imHtmlResponse</code>）、XML、JSON文字列、任意Content-Type、ファイルダウンロード、ファイルインライン表示、ファイルバイナリ返却。内部識別子は<code>im&lt;種別名&gt;Response</code>の命名パターンと見られるが、テキスト・HTML・JSON変換以外の6種類は未確認</td></tr>
       <tr><td><code>responseHeader</code></td><td>オブジェクト</td><td>レスポンスヘッダのキー・値。<code>Content-Type</code>は、出力データ側のプロパティまたはこの<code>responseHeader</code>で指定でき、いずれも未指定の場合は<code>application/octet-stream</code>が適用される。サンプルでは空オブジェクト</td></tr>
     </tbody>
   </table>
@@ -146,7 +146,7 @@
   <h2 class="h3 mt-4" id="s7">7. 未検証事項</h2>
   <ul>
     <li>Basic認証・OAuthを指定した場合の<code>authenticationParam</code>の具体的な形式。</li>
-    <li><code>imJsonResponse</code>・<code>imTextResponse</code>以外の7種類（HTML、XML、JSON文字列、任意Content-Type、ファイルダウンロード、ファイルインライン表示、ファイルバイナリ返却）の<code>responseType</code>の内部識別子文字列。</li>
+    <li><code>imJsonResponse</code>・<code>imTextResponse</code>・<code>imHtmlResponse</code>以外の6種類（XML、JSON文字列、任意Content-Type、ファイルダウンロード、ファイルインライン表示、ファイルバイナリ返却）の<code>responseType</code>の内部識別子文字列。</li>
     <li><code>responseHeader</code>に値を設定した場合の具体的な構造（キー・値のペアか、それ以上の入れ子構造を持つか）。</li>
     <li><code>icon_data/</code>（2章）の具体的な内部構造（ファイル形式、<code>iconId</code>とユーザ定義側の対応関係）。</li>
     <li><code>byte</code>型がフロー定義ZIP内でバイナリデータ用途に使われている点と、ルーティング仕様上のJSON表現（Number）との関係。</li>
