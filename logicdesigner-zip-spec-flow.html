@@ -766,22 +766,32 @@
   <ul>
     <li><code>key.version</code>（userDefinitionのバージョン固定）が非<code>null</code>となるケースの挙動。非<code>null</code>の実例は確認できていない</li>
     <li>ユーザ定義タスクの処理種別のうち、<code>definitionData</code>の内部構造まで確認できているのは<code>"sql"</code>・<code>"javascript"</code>・<code>"rest"</code>・<code>"template"</code>の4種類のみ（<a href="logicdesigner-zip-spec-userdef.html#s6">ユーザ定義編6〜9章</a>）。公式ドキュメントによると全17種類の処理種別が存在し、残る13種類は<code>elementId</code>や<code>definitionType</code>文字列は未確認（一部は<code>elementProperties</code>の項目名まで判明。<a href="logicdesigner-zip-spec-userdef.html#s10">ユーザ定義編10章</a>）</li>
-    <li>フロートリガ（下記）のエクスポート・ZIP形式の有無、および<code>eventId</code>（発生条件）に指定できる値の一覧</li>
+    <li>フロートリガの<code>eventId</code>（発生条件）に指定できる値の全量（確認できているのは<code>im_account_created</code>のみ）</li>
   </ul>
   <p class="text-secondary small">「ユーザ定義タスク自体の登録フォーマット」は<a href="logicdesigner-zip-spec-userdef.html">ユーザ定義編</a>で解決した。</p>
-  <p>なお、フロー起動条件・トリガ（スケジュール実行やイベント起動等の設定）に関する記述は<code>flow_definition.json</code>内には見当たらない。フロー本体の定義のみが含まれ、起動条件はLogicDesigner外の別画面・別データで管理されている。公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/flow_trigger/index.html">「4.4. フロートリガ」</a>によると、LogicDesigner自身にも「フロートリガ」という起動条件設定の仕組みがあり、発生条件が満たされた際にIM-Propagationを介してデータを受信しフローを実行する。製品パッケージ内のトリガ編集画面のロジック（保存時にAPIへ送信するデータ生成処理）を確認したところ、フロートリガのデータ構造は次の項目を持つ。</p>
-  <pre class="bg-white border rounded p-3">{
-  "triggerId": "...",
-  "triggerName": "...",
-  "localizes": { "ja": { "locale": "ja", "triggerName": "..." } },
-  "enabled": true,
-  "eventId": "...",
-  "flowId": "sample",
-  "flowVersion": 1,
-  "mappingDefinition": { "mappingRules": [ ... ] },
-  "additional": { "ui": "{ \"mapping\": { \"json\": {...}, \"additionalKeys\": [...] } }" }
-}</pre>
-  <p><code>flowId</code>・<code>flowVersion</code>で対象フローとバージョンを指定し（紐づくフロー定義・バージョンが削除されるとトリガも削除される）、<code>enabled</code>が有効／無効の状態、<code>eventId</code>が発生条件（具体的に指定できる値の一覧は未確認）を表す。<code>mappingDefinition</code>はフロー定義編11章と同型の<code>mappingRules</code>を持ち、受信データをフロー入力にマッピングする。<code>additional.ui</code>は二重JSONエンコードされたデザイナ表示情報で、<code>mapping.json</code>・<code>mapping.additionalKeys</code>を持つ点は12.3節の<code>mapping.json</code>と同様の構造と見られる。この構造がエクスポートZIPにそのまま含まれるか、含まれる場合のファイル名は未確認である。これとは別に、少なくともスケジュール実行によるトリガは、別製品IM-JobSchedulerが担うことも確認できている（詳細な設定形式はいずれも本書の対象外）。</p>
+  <p>なお、フロー起動条件・トリガ（スケジュール実行やイベント起動等の設定）に関する記述は<code>flow_definition.json</code>内には見当たらない。フロー本体の定義のみが含まれ、起動条件はLogicDesigner外の別画面・別データで管理されている。公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/flow_trigger/index.html">「4.4. フロートリガ」</a>によると、LogicDesigner自身にも「フロートリガ」という起動条件設定の仕組みがあり、発生条件が満たされた際にIM-Propagationを介してデータを受信しフローを実行する。フロートリガは<strong><code>flow_trigger.json</code>という独自のZIP形式でエクスポートされる</strong>ことを確認済みで、<code>flow_route.json</code>（ルーティング定義編）と同様にトップレベルが配列で、二重JSONエンコードは行われない。</p>
+  <pre class="bg-white border rounded p-3">[
+  {
+    "triggerId": "trigger01",
+    "triggerName": "サンプルトリガ",
+    "eventId": "im_account_created",
+    "flowId": "sample",
+    "flowVersion": 1,
+    "enabled": true,
+    "mappingDefinition": {
+      "mappingRules": [
+        { "id": "6dc27c06-...", "target": "input/input1",
+          "source": { "type": "value", "name": null, "path": "event/calendarId", "arguments": null } }
+      ]
+    },
+    "localizes": {
+      "ja": { "locale": "ja", "triggerName": "..." },
+      "en": { "locale": "en", "triggerName": "..." }
+    },
+    "additional": { "ui": "{\"mapping\":{\"json\":{...},\"additionalKeys\":[]}}" }
+  }
+]</pre>
+  <p><code>flowId</code>・<code>flowVersion</code>で対象フローとバージョンを指定し（紐づくフロー定義・バージョンが削除されるとトリガも削除されると見られる）、<code>enabled</code>が有効／無効の状態、<code>eventId</code>が発生条件を表す文字列（確認できた実例は<code>im_account_created</code>＝アカウント作成イベントのみ）。<code>mappingDefinition.mappingRules</code>はフロー定義編11章と同型で、<code>target</code>はフロー入力を指す<code>input/&lt;name&gt;</code>形式、<code>source.path</code>はイベントが持つデータを指す<code>event/&lt;プロパティ名&gt;</code>形式となる（11.4節のpathプレフィックス一覧とは別の、フロートリガ専用のプレフィックス）。<code>localizes</code>（複数形）はカテゴリ・フロー等と同じ<code>{ "&lt;locale&gt;": { "locale": ..., "triggerName": ... } }</code>のネスト構造。<code>additional.ui</code>は二重JSONエンコードされたデザイナ表示情報で、<code>mapping.json</code>・<code>mapping.additionalKeys</code>を持ち、12.3節の<code>mapping.json</code>と同様に<code>connectors</code>（<code>source</code>/<code>target</code>の<code>type</code>は<code>$input</code>/<code>$output</code>固定、<code>path</code>はタブ区切り）で構成される。これとは別に、少なくともスケジュール実行によるトリガは、別製品IM-JobSchedulerが担うことも確認できている（詳細な設定形式はいずれも本書の対象外）。</p>
   <p>これらは、必要に応じて製品ドキュメント等を基に、個別仕様として追記する。</p>
 
   <h2 class="h3 mt-4" id="s18">18. 新規ZIP生成手順（実践ガイド）</h2>
