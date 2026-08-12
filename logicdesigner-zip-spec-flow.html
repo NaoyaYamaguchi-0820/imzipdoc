@@ -244,7 +244,7 @@
   <table class="table table-bordered table-striped align-middle">
     <thead><tr><th>項目</th><th>型</th><th>説明</th></tr></thead>
     <tbody>
-      <tr><td><code>executeId</code></td><td>文字列</td><td>フロー内で一意な要素ID。マッピングの参照キー（<code>&lt;executeId&gt;/&lt;path&gt;</code>）としても使用</td></tr>
+      <tr><td><code>executeId</code></td><td>文字列</td><td>フロー内で一意な要素ID。マッピングの参照キー（<code>&lt;executeId&gt;/&lt;path&gt;</code>）としても使用。<code>localUserDefinition</code>等の<code>key.id</code>（定義本体のID）とは別物で、リネームしても連動しない（16章参照）</td></tr>
       <tr><td><code>alias</code></td><td>文字列または<code>null</code></td><td>要素の別名。未設定時は<code>null</code></td></tr>
       <tr><td><code>key</code></td><td>オブジェクト</td><td>要素種別の識別情報。<code>type</code>・<code>id</code>・<code>version</code>を持つ。10.2節参照</td></tr>
       <tr><td><code>label</code></td><td>文字列または<code>null</code></td><td>デザイナ上の表示ラベル。接続要素では<code>null</code>になることが多い</td></tr>
@@ -758,6 +758,7 @@
     <li>カテゴリID、フローID、バージョン、図ファイル名の対応を崩さない。</li>
     <li><code>mappingOrder</code>・<code>versionComment</code>のようにエクスポート元によって有無が変わる項目があるため、キー欠落を前提に読み込み処理を実装する。</li>
     <li>定数（<code>constants</code>）を追加・変更する場合は、定義自体だけでなく、各要素の<code>mappingDefinition.mappingRules</code>内の<code>$const/&lt;name&gt;</code>参照との整合性も確認する。</li>
+    <li><strong><code>executeId</code>のリネームは、それを参照している他要素の<code>mappingRules</code>を巻き込んで壊す。</strong>デザイナ上で要素の<code>executeId</code>を変更（例: <code>generate_application</code>→<code>generate_application1</code>）しても、内部の<code>key.id</code>／<code>definitionId</code>（<code>localUserDefinition</code>の定義本体を指すID）は追従して変わらない一方、他要素側で旧<code>executeId</code>をパスのプレフィックスとして参照している<code>mappingRules</code>（例: <code>im_chat</code>側の<code>source.path: "generate_application/messages"</code>）は自動更新されず、保存時に無効な参照として扱われて<strong>ルールごと消える</strong>（実機で確認）。単純な値参照のルールは丸ごと削除され、関数呼び出しを伴うルールは関数呼び出しのシェルだけが残って引数が空になるなど、壊れ方も一様ではない。要素の<code>executeId</code>を変更する場合は、影響を受ける全ての<code>mappingRules</code>を手動で洗い出して追従させる必要がある。</li>
     <li>仕様の詳細は、利用するintra-mart環境のバージョンとエクスポート対象に応じて確認する。</li>
   </ul>
 
