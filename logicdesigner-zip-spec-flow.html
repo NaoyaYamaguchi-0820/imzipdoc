@@ -627,7 +627,7 @@
   "z": 3,
   "attrs": { ".link-tools>.link-tool>.tool-remove": { "display": "" } }
 }</pre>
-  <p><code>devs.CommentModel</code>（コメント注釈）はデザイナ上の表示専用要素であり、対応する<code>flowElements</code>は存在せず、<code>dataMap</code>・<code>optionMap</code>にも登録されない。</p>
+  <p><code>devs.CommentModel</code>（コメント注釈）はデザイナ上の表示専用要素であり、対応する<code>flowElements</code>は存在しない。ただし<code>dataMap</code>・<code>optionMap</code>には他のノードと同様に登録される（<code>metadata.key</code>は<code>{ "id": "im_comment", "type": "ui", "version": 1 }</code>、<code>metadata.elementProperties</code>は<code>null</code>となる）。したがって<code>dataMap</code>・<code>optionMap</code>のエントリ数は、「<code>im_sequence</code>を除く<code>flowElements</code>の件数」と一致するのではなく、そこにコメント注釈の件数を加えた数と一致する（18.5節参照）。</p>
 
   <h3 class="h4 mt-4">12.3 dataMap</h3>
   <p>キーはUIノードID。値は次の4項目を持つ。</p>
@@ -956,10 +956,10 @@
     <li><code>im_sequence</code>／<code>im_startLoop</code>／<code>im_endLoop</code>／<code>im_gateway</code>の<code>properties</code>内で参照する<code>executeId</code>（<code>startPoint</code>/<code>endPoint</code>/<code>defaultRoot</code>等）が、実在する要素の<code>executeId</code>と一致しているか</li>
     <li><code>additional.ui</code>の<code>graph.cells</code>内<code>link</code>の<code>source.id</code>/<code>target.id</code>が、対応するノードの<code>id</code>（<code>dataMap</code>のキー）と一致しているか</li>
     <li><code>dataMap</code>・<code>optionMap</code>のキー（UIノードID）が、<code>graph.cells</code>内の対応するノードの<code>id</code>と一致しているか</li>
-    <li><code>im_sequence</code>を除く<code>flowElements</code>の件数と、<code>dataMap</code>・<code>optionMap</code>のエントリ数が一致しているか</li>
+    <li><code>im_sequence</code>を除く<code>flowElements</code>の件数に、<code>additional.ui</code>内のコメント注釈（<code>devs.CommentModel</code>）の件数を加えた数と、<code>dataMap</code>・<code>optionMap</code>のエントリ数が一致しているか（コメント注釈にも対応するエントリが必要。12.2節）</li>
     <li><code>mappingDefinition.mappingRules[].target</code>・<code>source</code>内の<code>path</code>が指す先（他要素の<code>executeId</code>、<code>$variable</code>/<code>$const</code>/<code>$input</code>/<code>$output</code>の名前）が実在するか</li>
     <li><code>constants</code>を追加・変更した場合、対応する<code>$const/&lt;name&gt;</code>参照側と整合しているか（16章）</li>
-    <li><code>mappingRules</code>を持つ要素について、対応する<code>dataMap[uiNodeId].mapping.json</code>の<code>connectors</code>が、<code>mappingRules</code>と同じ件数・同じ<code>id</code>で存在するか（12.5節。ここが不整合だとデザイナでの再保存時にルールが消える）</li>
+    <li><code>mappingRules</code>を持つ要素について、各<code>mappingRules[].id</code>が、対応する<code>dataMap[uiNodeId].mapping.json</code>の<code>connectors</code>の中に過不足なく存在するか。単純な値参照（<code>source.type: "value"</code>）は1件のルールが1件のconnectorに対応するが、関数呼び出し（<code>source.type: "function"</code>）を伴うルールは、関数ノードを介した複数のconnectors（各引数→関数、関数→設定先）に展開されるため、connectors総数とmappingRules件数は必ずしも一致しない点に注意する（12.5.1節）。<code>mappingRules[].id</code>と一致するのは、このうち最終的な設定先へつなぐconnectorのみである。ここが不整合だとデザイナでの再保存時にルールが消える（12.5節）</li>
     <li>フロー定義オブジェクト・<code>additional.ui</code>それぞれが、単体で正しくJSONパースできるか（二重エンコードの崩れがないか）</li>
     <li><code>flowId</code>・<code>version</code>・<code>categoryId</code>が、<code>flowCategories</code>および同一ZIP内の既存フローと矛盾しないか</li>
   </ul>
