@@ -9,9 +9,25 @@
     code { overflow-wrap: anywhere; word-break: break-word; }
     table { table-layout: fixed; }
     td, th { overflow-wrap: anywhere; word-break: break-word; }
+    html { scroll-behavior: smooth; }
+    .back-to-top {
+      position: fixed;
+      right: 1.25rem;
+      bottom: 1.25rem;
+      z-index: 1030;
+      width: 3rem;
+      height: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 1.25rem;
+      line-height: 1;
+      box-shadow: 0 .25rem .75rem rgba(0,0,0,.2);
+    }
   </style>
 </head>
-<body class="bg-light">
+<body class="bg-light" id="top">
 <main class="container py-4 py-md-5">
   <h1 class="mb-3">IM-LogicDesigner ZIP仕様 - フロー定義編</h1>
   <p class="text-secondary">更新日: 2026-08-11</p>
@@ -816,5 +832,6 @@
 
 
 </main>
+<a href="#top" class="btn btn-primary back-to-top" aria-label="ページの先頭へ戻る" title="先頭へ戻る">↑</a>
 </body>
 </html>
