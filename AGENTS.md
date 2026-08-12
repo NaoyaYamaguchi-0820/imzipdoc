@@ -4,7 +4,6 @@
   - `logicdesigner-zip-spec-flow.html` — フロー定義編（`flow_definition.json`）
   - `logicdesigner-zip-spec-userdef.html` — ユーザ定義編（`user_definition.json`）
   - `logicdesigner-zip-spec-route.html` — ルーティング定義編（`flow_route.json`）
-  - `logicdesigner-zip-spec-related.html` — 関連機能編（IM-Copilot連携、`assistant_definition.json`、IM-JobScheduler連携等、他3ファイルに収まらない内容）
   - `index.html` — 上記ドキュメントへの入口ページ。ドキュメントを追加・分割した場合はここにもリンクを追加すること
 - 特定のファイルやサンプルだけに依存した記述は避け、一般化した仕様として記載すること。必要な場合は、製品バージョンや環境による差異がある旨を併記すること。
 - 実データを何件解析したか、実機でどう検証したかといった調査プロセスの言及はしないこと。ドキュメントは一般的な仕様をまとめるためのものであり、判明した事実を直接記載する。未確認・未検証の事項は「未確認」「未検証」と明記する。

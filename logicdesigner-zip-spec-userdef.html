@@ -32,7 +32,7 @@
   <p class="mb-2"><a href="index.html">&larr; 一覧に戻る</a></p>
   <h1 class="mb-3">IM-LogicDesigner ZIP仕様 - ユーザ定義編</h1>
   <p class="text-secondary">更新日: 2026-08-11</p>
-  <p>本書は、フロー定義ZIP（<a href="logicdesigner-zip-spec-flow.html">logicdesigner-zip-spec-flow.html</a>）と対をなす、ユーザ定義タスク登録ZIP（<code>user_definition.json</code>）を対象とする。テナントに共有登録するユーザ定義タスク（フロー定義編10.4節の<code>key.type: "userDefinition"</code>が参照する定義本体）自体を登録・移行するための形式である。フロー定義編・ルーティング定義編（<a href="logicdesigner-zip-spec-route.html">logicdesigner-zip-spec-route.html</a>）・関連機能編（<a href="logicdesigner-zip-spec-related.html">logicdesigner-zip-spec-related.html</a>）とあわせて読むことを前提とする。</p>
+  <p>本書は、フロー定義ZIP（<a href="logicdesigner-zip-spec-flow.html">logicdesigner-zip-spec-flow.html</a>）と対をなす、ユーザ定義タスク登録ZIP（<code>user_definition.json</code>）を対象とする。テナントに共有登録するユーザ定義タスク（フロー定義編10.4節の<code>key.type: "userDefinition"</code>が参照する定義本体）自体を登録・移行するための形式である。フロー定義編・ルーティング定義編（<a href="logicdesigner-zip-spec-route.html">logicdesigner-zip-spec-route.html</a>）とあわせて読むことを前提とする。</p>
 
   <div class="card mb-4 toc">
     <div class="card-body">
@@ -190,7 +190,7 @@
   <p><code>outputDataDefinition</code>は、この要素固有の固定構造を持つ。<code>status</code>（<code>statusCode</code>・<code>reasonPhrase</code>を持つオブジェクト）、<code>headers</code>（<code>map</code>型）、<code>body</code>（レスポンスボディをパースした内容）、<code>failureResponseBody</code>（失敗時のレスポンスボディ）の4項目が固定で存在すると見られる。<code>body</code>の型定義について、公式の「IM-LogicDesignerチュートリアルガイド」によると、レスポンス種別を<code>json</code>に設定した上で、返却値の<code>body&lt;object&gt;</code>を選択して「JSON入力」機能でサンプルJSONを入力すると、対応する型定義（<code>typeDefinitions</code>）が自動生成される。</p>
 
   <h2 class="h3 mt-4" id="s9">9. definitionType: "template"</h2>
-  <p><code>definitionType: "template"</code>の場合、<code>definitionData.elementId</code>は<code>"im_templateProcessor"</code>で、テンプレート文字列から出力を生成するための設定を<code>elementProperties</code>に持つ。IM-Copilotのアシスタント（<a href="logicdesigner-zip-spec-related.html">関連機能編</a>参照）で、LLMへ渡すプロンプトを組み立てる用途で使われている例を確認した。</p>
+  <p><code>definitionType: "template"</code>の場合、<code>definitionData.elementId</code>は<code>"im_templateProcessor"</code>で、テンプレート文字列から出力を生成するための設定を<code>elementProperties</code>に持つ。IM-Copilotのアシスタントで、LLMへ渡すプロンプトを組み立てる用途で使われている例を確認した。</p>
   <pre class="bg-white border rounded p-3">"elementProperties": {
   "localizedTemplate": { "ja": "", "en": "", "zh_CN": "" },
   "defaultTemplate": "&lt;#setting url_escaping_charset=\"UTF-8\"&gt;\nこんにちは、${name}さん。\n参考情報:\n${referenceInfoJson}\n"

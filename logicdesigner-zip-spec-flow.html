@@ -33,7 +33,7 @@
   <h1 class="mb-3">IM-LogicDesigner ZIP仕様 - フロー定義編</h1>
   <p class="text-secondary">更新日: 2026-08-11</p>
   <p>本書では、IM-LogicDesignerのエクスポートZIPに含まれるデータの構成と、各データの役割を網羅的に説明する。ファイル構成や項目は、製品バージョン、エクスポート対象、フローの内容によって異なる場合がある。</p>
-  <p>本書はフロー定義ZIP（<code>flow_definition.json</code>）を対象とする。関連する別形式のZIPは別ファイルにまとめている。ユーザ定義タスク登録ZIP（<code>user_definition.json</code>）は<a href="logicdesigner-zip-spec-userdef.html">logicdesigner-zip-spec-userdef.html</a>（ユーザ定義編）、REST APIルーティング定義ZIP（<code>flow_route.json</code>）は<a href="logicdesigner-zip-spec-route.html">logicdesigner-zip-spec-route.html</a>（ルーティング定義編）、IM-Copilot連携やスケジュール実行トリガ等は<a href="logicdesigner-zip-spec-related.html">logicdesigner-zip-spec-related.html</a>（関連機能編）を参照。</p>
+  <p>本書はフロー定義ZIP（<code>flow_definition.json</code>）を対象とする。関連する別形式のZIPは別ファイルにまとめている。ユーザ定義タスク登録ZIP（<code>user_definition.json</code>）は<a href="logicdesigner-zip-spec-userdef.html">logicdesigner-zip-spec-userdef.html</a>（ユーザ定義編）、REST APIルーティング定義ZIP（<code>flow_route.json</code>）は<a href="logicdesigner-zip-spec-route.html">logicdesigner-zip-spec-route.html</a>（ルーティング定義編）を参照。</p>
 
   <div class="card mb-4 toc">
     <div class="card-body">
@@ -651,7 +651,7 @@
     <li><code>definitionType: "javascript"</code>のスクリプト実行環境で、制限対象APIの具体的な一覧（判定基準は20.5節を参照）</li>
   </ul>
   <p class="text-secondary small">「ユーザ定義タスク自体の登録フォーマット」は20章で解決した。</p>
-  <p>なお、フロー起動条件・トリガ（スケジュール実行やイベント起動等の設定）に関する記述は<code>flow_definition.json</code>内には見当たらない。フロー本体の定義のみが含まれ、起動条件はLogicDesigner外の別画面・別データで管理されている。少なくともスケジュール実行によるトリガは、別製品IM-JobSchedulerの<code>job-scheduler.xml</code>（<code>LogicFlowExecutorJob</code>というJavaジョブ経由でフローを呼び出す）が担う。詳細は<a href="logicdesigner-zip-spec-related.html">関連機能編</a>3章を参照。</p>
+  <p>なお、フロー起動条件・トリガ（スケジュール実行やイベント起動等の設定）に関する記述は<code>flow_definition.json</code>内には見当たらない。フロー本体の定義のみが含まれ、起動条件はLogicDesigner外の別画面・別データで管理されている。少なくともスケジュール実行によるトリガは、別製品IM-JobSchedulerが担う（詳細な設定形式は本書の対象外）。</p>
   <p>これらは、必要に応じて製品ドキュメント等を基に、個別仕様として追記する。</p>
 
   <h2 class="h3 mt-4" id="s18">18. 新規ZIP生成手順（実践ガイド）</h2>
