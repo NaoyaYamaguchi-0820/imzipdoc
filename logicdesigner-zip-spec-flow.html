@@ -625,8 +625,10 @@
   "target": { "id": "&lt;UIノードID&gt;", "port": "in" },
   "id": "&lt;リンクのUUID&gt;",
   "z": 3,
+  "vertices": [ { "x": 80, "y": 570 } ],
   "attrs": { ".link-tools>.link-tool>.tool-remove": { "display": "" } }
 }</pre>
+  <p><code>vertices</code>は、接続線がノードとノードの間で経由する中間点（経由点）の座標配列で、デザイナ上で接続線をドラッグして折り曲げた場合に付与される。要素を持たない配列（<code>[]</code>）または項目自体の省略も有効で、その場合は2つのノードを直線で結ぶ。表示上のレイアウト情報に過ぎず、フロー自体の動作には影響しない。</p>
   <p><code>devs.CommentModel</code>（コメント注釈）はデザイナ上の表示専用要素であり、対応する<code>flowElements</code>は存在しない。ただし<code>dataMap</code>・<code>optionMap</code>には他のノードと同様に登録される（<code>metadata.key</code>は<code>{ "id": "im_comment", "type": "ui", "version": 1 }</code>、<code>metadata.elementProperties</code>は<code>null</code>となる）。したがって<code>dataMap</code>・<code>optionMap</code>のエントリ数は、「<code>im_sequence</code>を除く<code>flowElements</code>の件数」と一致するのではなく、そこにコメント注釈の件数を加えた数と一致する（18.5節参照）。</p>
 
   <h3 class="h4 mt-4">12.3 dataMap</h3>
