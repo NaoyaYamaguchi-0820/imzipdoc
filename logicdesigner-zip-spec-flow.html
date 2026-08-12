@@ -942,6 +942,7 @@
 }</pre>
   <p>タスク要素（<code>devs.ProcModel</code>）のノードは、<code>attrs</code>に<code>rect.title</code>を持たない点を除き、<code>StartModel</code>/<code>EndModel</code>とほぼ同形式である。<code>position</code>は自由に決めてよく、崩れた配置でも動作には影響しない。まずは実行順に沿って縦方向へ一定間隔（例: Y座標を100〜150刻みで増加）に並べる簡易レイアウトで問題ない。<code>z</code>はノード・リンクの重なり順で、生成順に連番を振れば足りる。</p>
   <div class="alert alert-danger" role="alert">要素が<code>mappingDefinition.mappingRules</code>を持つ場合、<code>dataMap[uiNodeId].mapping.json</code>を<code>{}</code>のまま省略してはならない。省略した場合、ZIPのインポート自体は成功しても、デザイナでフローを開いて保存した時点で<code>mappingRules</code>が消去される。<code>mapping.json</code>の正しい構造は12.5節を参照。<code>mappingRules</code>を持たない要素（<code>im_start</code>や、入力を持たないタスクなど）については、<code>mapping.json</code>を空のままにしても問題ない。</div>
+  <p><code>mapping.inputKeys</code>（12.3節）は、その要素の実際のマッピング動作には影響しない、あくまでマッピングエディタの左側候補一覧に何を出すかという表示用の項目である。<code>im_start</code>のような前段要素を持たない要素では<code>["$input", "$variable", "$const"]</code>のような一般的な候補一覧で構わないが、前段に他要素を持つ要素では、<strong>実際に<code>mappingRules</code>で参照している参照元（他要素の<code>executeId</code>・<code>$const</code>等）だけに絞って列挙する</strong>とよい。使っていない参照元まで機械的に含めると、マッピングエディタを開いたときに「マッピングされていない参照元候補」（例: 定数を使っていないのに<code>$const</code>由来の「定数」グループが表示される）が並んでしまう。手動生成時にあらかじめ絞り込んでおけば、この見た目上のノイズを最初から避けられる。</p>
 
   <h3 class="h4 mt-4">18.4 要素追加時の「3点セット」</h3>
   <p>フローに要素を1つ追加するたびに、次の3か所を必ず同時に更新する。いずれかを欠くと、<code>flowElements</code>とUI情報（<code>additional.ui</code>）の対応が崩れる。</p>
