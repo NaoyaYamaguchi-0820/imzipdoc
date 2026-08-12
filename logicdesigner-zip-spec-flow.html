@@ -955,6 +955,26 @@
     <code>mappingRules[].target</code>が<code>$output/&lt;name&gt;</code>・<code>$variable/&lt;name&gt;</code>のような特殊プレフィックスの場合、対応する<code>mapping.json</code>の<code>connectors[].target.path</code>は、あくまで<code>mappingRules</code>側の<code>target</code>文字列（<code>"$output/chatMessage"</code>等）のスラッシュをタブに置き換えた値（<code>"$output\tchatMessage"</code>）にする（12.5.1節）。他要素のプロパティへ設定する場合の<code>"&lt;executeId&gt;\t&lt;プロパティ名&gt;"</code>という形式（12.2節の例）と混同し、<code>"im_end1\tchatMessage"</code>のように誤って要素の<code>executeId</code>をプレフィックスに使ってしまうと、インポート自体は成功するが、デザイナ上ではマッピングが実際には結線されず「参照候補が残っているだけ」の状態に見える（実機で確認した失敗例）。
   </div>
 
+  <h4 class="mt-4" style="font-size:1rem;font-weight:600;">18.4.1 executeIdをリネームする場合の手順（マッピング不整合を防ぐ）</h4>
+  <p>16章のとおり、<code>executeId</code>のリネームは、それを参照している他要素の<code>mappingRules</code>を巻き込んで壊しうる。手作業でリネームする場合は、次の手順で<strong>1箇所も取りこぼさず</strong>置き換える。</p>
+  <ol>
+    <li>二重エンコード前（<code>JSON.parse</code>を1回済ませた後）のフロー定義オブジェクト全体を対象に、旧<code>executeId</code>の文字列が現れる箇所を洗い出す。具体的には次の7箇所がある。
+      <ul>
+        <li>リネームする要素自身の<code>flowElements[].executeId</code></li>
+        <li><code>im_sequence</code>の<code>startPoint</code>/<code>endPoint</code>（<code>im_startLoop</code>/<code>im_gateway</code>の<code>defaultRoot</code>等も同様）</li>
+        <li><strong>他の任意の要素</strong>の<code>mappingDefinition.mappingRules[].target</code>・<code>source.path</code>のうち、旧<code>executeId</code>をプレフィックスとして持つもの（例: <code>"generate_application/messages"</code>）</li>
+        <li><code>additional.ui</code>の<code>graph.cells[].attrs.text.title</code>（表示上のノードタイトル）</li>
+        <li><code>additional.ui</code>の<code>dataMap[uiNodeId].common.executeId</code>・<code>alias</code></li>
+        <li><strong>他の任意の要素</strong>の<code>dataMap[uiNodeId].mapping.json.connectors[].source.path</code>・<code>target.path</code>のうち、旧<code>executeId</code>をタブ区切りのプレフィックスとして持つもの（例: <code>"generate_application\tmessages"</code>。12.5.1節）</li>
+        <li><code>dataMap[uiNodeId].mapping.inputKeys</code>配列内の、旧<code>executeId</code>と一致する要素</li>
+      </ul>
+    </li>
+    <li>上記すべてを新しい<code>executeId</code>に置き換える。フィールドを1つずつ手で辿るより、フロー定義オブジェクト・<code>additional.ui</code>それぞれをJSON文字列化した状態で、旧<code>executeId</code>文字列を新しい文字列へ一括置換する方が確実で、取りこぼしにくい。</li>
+    <li>置換後、旧<code>executeId</code>の文字列がテキスト上に一切残っていないことを確認する（意図しない部分文字列一致がないかにも注意する）。</li>
+    <li>18.5節のセルフチェックリスト、特に「<code>mappingRules</code>のpathが実在するか」と「<code>mappingRules[].id</code>が<code>connectors</code>に過不足なく存在するか」を再実行する。</li>
+  </ol>
+  <p class="text-secondary small"><code>localUserDefinition</code>要素の場合、定義本体を指す<code>key.id</code>／<code>definitionId</code>は<code>executeId</code>と独立しており、リネームに追従させる必要はない（16章参照）。</p>
+
   <h3 class="h4 mt-4">18.5 生成後セルフチェックリスト</h3>
   <p>ZIP化する前に、生成した<code>flow_definition.json</code>（二重エンコード前の状態）に対して確認する。</p>
   <ul>
