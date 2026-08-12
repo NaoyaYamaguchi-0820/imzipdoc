@@ -67,7 +67,7 @@
 └── icon_data/
     ├── designer/&lt;iconId&gt;
     └── palette/&lt;iconId&gt;</pre>
-  <p><code>icon_data/designer/&lt;iconId&gt;</code>・<code>icon_data/palette/&lt;iconId&gt;</code>は、ユーザ定義タスクにアイコンを設定した場合の画像データと見られる（<code>definitionData.iconId</code>と対応すると考えられるが、ファイル名とidの対応関係自体は未確認）。アイコンを設定していないユーザ定義（本書のサンプルはすべて<code>iconId: null</code>）では、この<code>icon_data/</code>ディレクトリ自体が省略される。公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/user_definition/index.html">「4.2.4. ユーザアイコン」</a>によると、アイコン画像はパレット用（40×40）とデザイナ用（50×50）の2サイズをそれぞれ登録し、形式はSVG・PNG・JPEG・GIF・BMPに対応する（<code>designer/</code>・<code>palette/</code>の2ディレクトリはこの2サイズに対応すると見られる）。SVG形式の場合、1行目に<code>&lt;?xml version="1.0" encoding="utf-8"?&gt;</code>の記述が必須となる。また、IM-LogicDesignerのエクスポート機能は本来、フロー定義・ユーザ定義・ルーティング定義を含む全データを一括で1つのZIPにまとめて出力するものであり、<code>user_definition.json</code>単体で構成されたZIP（本書のサンプル）は、その一部を切り出した個別エクスポートに相当する（<a href="logicdesigner-zip-spec-route.html">ルーティング定義編</a>2章参照）。</p>
+  <p><code>icon_data/designer/&lt;iconId&gt;</code>・<code>icon_data/palette/&lt;iconId&gt;</code>は、ユーザ定義タスクにアイコンを設定した場合の画像データである。ファイル名がそのまま<code>definitionData.iconId</code>の値と一致することを確認済み（拡張子は付かない。例: <code>iconId: "im_user_comments"</code>に対し<code>icon_data/designer/im_user_comments</code>・<code>icon_data/palette/im_user_comments</code>というファイル名になる）。アイコンを設定していないユーザ定義（<code>iconId: null</code>）では、この<code>icon_data/</code>ディレクトリ自体が省略される。公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/user_definition/index.html">「4.2.4. ユーザアイコン」</a>によると、アイコン画像はパレット用（40×40）とデザイナ用（50×50）の2サイズをそれぞれ登録し、形式はSVG・PNG・JPEG・GIF・BMPに対応する（<code>designer/</code>・<code>palette/</code>の2ディレクトリはこの2サイズに対応すると見られる）。SVG形式の場合、1行目に<code>&lt;?xml version="1.0" encoding="utf-8"?&gt;</code>の記述が必須となる。また、IM-LogicDesignerのエクスポート機能は本来、フロー定義・ユーザ定義・ルーティング定義を含む全データを一括で1つのZIPにまとめて出力するものであり、<code>user_definition.json</code>単体で構成されたZIP（本書のサンプル）は、その一部を切り出した個別エクスポートに相当する（<a href="logicdesigner-zip-spec-route.html">ルーティング定義編</a>2章参照）。</p>
 
   <h2 class="h3 mt-4" id="s3">3. トップレベル構造</h2>
   <pre class="bg-white border rounded p-3">{
@@ -111,7 +111,7 @@
       <tr><td><code>definitionData.elementId</code></td><td>実処理を行う内部要素ID。<code>definitionType</code>ごとに固定値を取る（6〜8章）</td></tr>
       <tr><td><code>definitionData.elementProperties</code></td><td>内部要素固有の設定。<code>definitionType</code>ごとに構造が異なる（6〜8章）</td></tr>
       <tr><td><code>definitionData.inputDataDefinition</code> / <code>outputDataDefinition</code></td><td>この定義固有の入出力データ定義（構造はフロー定義編9章と同様）</td></tr>
-      <tr><td><code>localize</code></td><td>多言語情報（<strong>単数形</strong>）。カテゴリ・フロー・変数等で使われる<code>localizes</code>（複数形）とは綴りが異なる点に注意する。サンプルでは空オブジェクトだったため、多言語名を設定した場合の内部構造は未確認</td></tr>
+      <tr><td><code>localize</code></td><td>多言語情報（<strong>単数形</strong>）。カテゴリ・フロー・変数等で使われる<code>localizes</code>（複数形、<code>{ "&lt;locale&gt;": { "locale": ..., "&lt;name項目&gt;": ... } }</code>という入れ子構造）とは綴りだけでなく構造も異なり、<code>{ "&lt;locale&gt;": "&lt;定義名&gt;" }</code>という単純なフラットのキー・値構造であることを確認済み（例: <code>{ "ja": "日本語", "en": "英語", "zh_CN": "中国語" }</code>）</td></tr>
     </tbody>
   </table>
 
@@ -316,9 +316,7 @@ AdminUserManager, ShortCutManager, WSAccessManager</pre>
   <ul>
     <li>10章で挙げた13種類の<code>definitionType</code>文字列そのもの、および<code>elementId</code>（一部の<code>elementProperties</code>項目名は製品パッケージの解析から判明済み）。</li>
     <li><code>outputDataDefinition</code>の<code>body</code>型定義が、呼び出し先レスポンスの変化に応じてどう更新されるか（再度「JSON入力」が必要かなど）。</li>
-    <li><code>icon_data/</code>（2章）の<code>iconId</code>とファイル名の具体的な対応関係（画像ファイル形式・サイズは4.2.4節の公式情報から判明済み）。</li>
     <li>本章の手順で生成したZIP単体（フローを介さず、ユーザ定義ZIP自体）をインポートし、デザイナで開いて保存した場合に、フロー定義編で見られたような正規化（既定値の省略等）が同様に起きるか。</li>
-    <li><code>localize</code>（単数形）に実際に多言語名を設定した場合の内部構造。</li>
   </ul>
 
 </main>
