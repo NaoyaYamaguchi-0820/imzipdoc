@@ -461,9 +461,127 @@
       <tr><td>JSON</td><td><code>im_to_json</code>、<code>im_parse_json</code></td></tr>
     </tbody>
   </table>
-  <p>個々の関数が受け取る<code>arguments</code>の型・順序は、上記リンク先の各関数の個別ページ（例: <code>mapping_function/string/im_string_concat.html</code>）を参照する。</p>
+  <p>個々の関数が受け取る<code>arguments</code>の型・順序は、上記リンク先の各関数の個別ページ（例: <code>mapping_function/string/im_string_concat.html</code>）に記載されている。11.6節に全関数分を転記する。</p>
 
-  <h3 class="h4 mt-4">11.6 EL式（condition / defaultRoot）</h3>
+  <h3 class="h4 mt-4" id="s11-6">11.6 関数リファレンス（引数・戻り値）</h3>
+  <p>各関数の<code>arguments</code>は、記載した順序で配列に格納する（<code>{ "type": "value", ... }</code>または<code>{ "type": "function", ... }</code>を要素とする配列）。「配列」欄は、引数・戻り値がリスト型（複数値）を許容するかを示す。多くの関数は「引数に複数の値を指定した場合、戻り値も同数の値を返す」という並列処理の性質を持つ。</p>
+
+  <p class="text-secondary small mb-1">文字列操作</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>関数名</th><th>引数（順に）</th><th>戻り値</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>im_string_concat</code></td><td>a: string（配列）／b: string（配列）</td><td>string（配列）</td><td>2つの文字列を連結する（固定2引数）</td></tr>
+      <tr><td><code>im_string_replace</code></td><td>value: string（配列）／old: string（配列、正規表現）／new: string（配列）</td><td>string（配列）</td><td>文字列を置換する。<code>old</code>は正規表現で指定する</td></tr>
+      <tr><td><code>im_string_trim</code></td><td>value: string（配列）</td><td>string（配列）</td><td>前後の空白を除去する</td></tr>
+      <tr><td><code>im_string_split</code></td><td>value: string（単一のみ）／sep: string（単一、正規表現）</td><td>string（配列）</td><td>文字列を分割する。<code>value</code>は配列不可</td></tr>
+      <tr><td><code>im_string_join</code></td><td>value: string（配列）／sep: string（単一）</td><td>string（単一）</td><td>配列内の複数文字列を<code>sep</code>で連結する</td></tr>
+      <tr><td><code>im_string_el</code></td><td>value: string（単一、EL式）</td><td>string（単一）</td><td>Expression Language形式の式文字列を評価する。<code>${$input.foo}</code>等でフロー内の値を参照できる</td></tr>
+      <tr><td><code>im_string_substring</code></td><td>value: string（配列）／start: integer（配列）／end: integer（配列）</td><td>string（配列）</td><td>文字列の一部を抜き出す（開始・終了インデックス指定）</td></tr>
+    </tbody>
+  </table>
+
+  <p class="text-secondary small mb-1">数値操作</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>関数名</th><th>引数（順に）</th><th>戻り値</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>im_number_parsenumber</code></td><td>value: string（配列）／format: string（配列、Java DecimalFormat）</td><td>bigdecimal（配列）</td><td>文字列を数値として解析する</td></tr>
+      <tr><td><code>im_number_formatnumber</code></td><td>value: bigdecimal（配列）／format: string（配列、Java DecimalFormat）</td><td>string（配列）</td><td>数値を書式指定して文字列化する</td></tr>
+    </tbody>
+  </table>
+
+  <p class="text-secondary small mb-1">数値演算</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>関数名</th><th>引数（順に）</th><th>戻り値</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>im_math_addition</code></td><td>a: bigdecimal（配列）／b: bigdecimal（配列）</td><td>bigdecimal（配列）</td><td>加算</td></tr>
+      <tr><td><code>im_math_subtraction</code></td><td>a: bigdecimal（配列）／b: bigdecimal（配列）</td><td>bigdecimal（配列）</td><td>減算</td></tr>
+      <tr><td><code>im_math_multiplication</code></td><td>a: bigdecimal（配列）／b: bigdecimal（配列）</td><td>bigdecimal（配列）</td><td>乗算</td></tr>
+      <tr><td><code>im_math_division</code></td><td>a: bigdecimal（配列）／b: bigdecimal（配列）／scale: integer（単一、省略時2）</td><td>bigdecimal（配列）</td><td>除算。結果は<code>scale</code>桁で四捨五入される</td></tr>
+      <tr><td><code>im_math_modulus</code></td><td>a: bigdecimal（配列）／b: bigdecimal（配列）</td><td>bigdecimal（配列）</td><td>剰余を求める</td></tr>
+      <tr><td><code>im_math_roundUp</code></td><td>value: bigdecimal（配列）／scale: integer（単一）</td><td>bigdecimal（配列）</td><td>指定桁で切り上げる</td></tr>
+      <tr><td><code>im_math_roundHalfUp</code></td><td>value: bigdecimal（配列）／scale: integer（単一）</td><td>bigdecimal（配列）</td><td>指定桁で四捨五入する</td></tr>
+      <tr><td><code>im_math_roundDown</code></td><td>value: bigdecimal（配列）／scale: integer（単一）</td><td>bigdecimal（配列）</td><td>指定桁で切り捨てる</td></tr>
+      <tr><td><code>im_math_abs</code></td><td>value: bigdecimal（配列）</td><td>bigdecimal（配列）</td><td>絶対値を求める</td></tr>
+      <tr><td><code>im_math_pow</code></td><td>a: bigdecimal（配列、底）／b: bigdecimal（単一、指数。整数0〜999999999）</td><td>bigdecimal（配列）</td><td>べき乗を計算する</td></tr>
+      <tr><td><code>im_math_max</code></td><td>a: bigdecimal（配列）／b: bigdecimal（配列）</td><td>bigdecimal（配列）</td><td>大きい方の値を返す</td></tr>
+      <tr><td><code>im_math_min</code></td><td>a: bigdecimal（配列）／b: bigdecimal（配列）</td><td>bigdecimal（配列）</td><td>小さい方の値を返す</td></tr>
+    </tbody>
+  </table>
+
+  <p class="text-secondary small mb-1">日付操作</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>関数名</th><th>引数（順に）</th><th>戻り値</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>im_date_parsedate</code></td><td>value: string（配列）／format: string（配列、Java SimpleDateFormat）</td><td>date（配列）</td><td>文字列を日付として解析する</td></tr>
+      <tr><td><code>im_date_formatdate</code></td><td>value: date（配列）／format: string（配列、Java SimpleDateFormat）</td><td>string（配列）</td><td>日付を書式指定して文字列化する</td></tr>
+      <tr><td><code>im_date_calculate</code></td><td>value: calendar（配列）／sec: bigdecimal（配列、秒単位。負値で過去方向）</td><td>calendar（配列）</td><td>日付を秒単位で加減算する</td></tr>
+      <tr><td><code>im_date_interval</code></td><td>a: calendar（配列）／b: calendar（配列）</td><td>duration（配列）</td><td>2つの日付の間隔を求める</td></tr>
+      <tr><td><code>im_date_beginning_of_the_month</code></td><td>value: calendar（配列）</td><td>calendar（配列）</td><td>月初の日付を取得する</td></tr>
+      <tr><td><code>im_date_end_of_the_month</code></td><td>value: calendar（配列）</td><td>calendar（配列）</td><td>月末の日付を取得する</td></tr>
+      <tr><td><code>im_date_convertdate_in_system_tz</code></td><td>value: date（配列）</td><td>date（配列）</td><td>ユーザのタイムゾーンの日付とみなし、システムタイムゾーンの日付に変換する</td></tr>
+      <tr><td><code>im_date_convertdate_in_account_tz</code></td><td>value: date（配列）</td><td>date（配列）</td><td>システムタイムゾーンの日付とみなし、ユーザのタイムゾーンの日付に変換する</td></tr>
+      <tr><td><code>im_date_account_parsedate</code></td><td>value: string（配列）／pattern: string（配列、Java SimpleDateFormat）</td><td>date（配列）</td><td>ユーザのタイムゾーンで文字列を日付として解析する</td></tr>
+      <tr><td><code>im_date_account_formatdate</code></td><td>value: date（配列）／pattern: string（配列、Java SimpleDateFormat）</td><td>string（配列）</td><td>ユーザのタイムゾーンで日付を文字列化する</td></tr>
+    </tbody>
+  </table>
+
+  <p class="text-secondary small mb-1">ID生成</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>関数名</th><th>引数（順に）</th><th>戻り値</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>im_id_identifier</code></td><td>引数なし（公式ドキュメントに引数の記載なし）</td><td>string（単一）</td><td>API Identifierを利用して一意なIDを発行する</td></tr>
+      <tr><td><code>im_id_uuid</code></td><td>引数なし</td><td>string（単一）</td><td>UUIDを発行する</td></tr>
+    </tbody>
+  </table>
+
+  <p class="text-secondary small mb-1">Base64</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>関数名</th><th>引数（順に）</th><th>戻り値</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>im_binary_encode_base64</code></td><td>value: binary（配列）</td><td>string（配列）</td><td>バイナリをBase64文字列にエンコードする</td></tr>
+      <tr><td><code>im_base64_decode_binary</code></td><td>value: string（配列）</td><td>binary（配列）</td><td>Base64文字列をバイナリにデコードする</td></tr>
+    </tbody>
+  </table>
+
+  <p class="text-secondary small mb-1">配列操作</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>関数名</th><th>引数（順に）</th><th>戻り値</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>im_array_unshift</code></td><td>array: 任意型（配列）／value: 任意型（配列）</td><td>arrayと同じ型（配列）</td><td>配列の先頭に要素を追加する。<code>value</code>の型は<code>array</code>と合わせる（不一致時は変換を試み、失敗時は例外）</td></tr>
+      <tr><td><code>im_array_push</code></td><td>array: 任意型（配列）／value: 任意型（配列）</td><td>arrayと同じ型（配列）</td><td>配列の末尾に要素を追加する</td></tr>
+      <tr><td><code>im_array_remove</code></td><td>array: 任意型（配列）／index: integer（配列）</td><td>arrayと同じ型（配列）</td><td>指定インデックスの要素を削除する</td></tr>
+      <tr><td><code>im_array_replace</code></td><td>array: 任意型（配列）／index: integer（配列）／value: 任意型（配列）</td><td>arrayと同じ型（配列）</td><td>指定インデックスの要素を置換する。<code>index</code>と<code>value</code>の数が異なる場合、少ない方の件数に統一される</td></tr>
+      <tr><td><code>im_array_size</code></td><td>array: 任意型（配列）</td><td>bigdecimal（単一）</td><td>要素数を取得する</td></tr>
+      <tr><td><code>im_array_get</code></td><td>array: 任意型（配列）／index: integer（配列）</td><td>arrayと同じ型（配列）</td><td>指定インデックスの要素を取得する</td></tr>
+      <tr><td><code>im_array_insert</code></td><td>array: 任意型（配列）／index: integer（配列）／value: 任意型（配列）</td><td>arrayと同じ型（配列）</td><td>指定インデックスに要素を挿入する。複数指定時は前から順に処理される</td></tr>
+      <tr><td><code>im_array_first</code></td><td>array: 任意型（配列）</td><td>arrayと同じ型（単一）</td><td>先頭要素を取得する</td></tr>
+      <tr><td><code>im_array_last</code></td><td>array: 任意型（配列）</td><td>arrayと同じ型（単一）</td><td>末尾要素を取得する</td></tr>
+    </tbody>
+  </table>
+
+  <p class="text-secondary small mb-1">オブジェクト操作</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>関数名</th><th>引数（順に）</th><th>戻り値</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>im_object_keys</code></td><td>object: object/map（単一）</td><td>string（配列）</td><td>プロパティ名（キー）一覧を取得する。順序は保証されない</td></tr>
+      <tr><td><code>im_object_values</code></td><td>object: object/map（単一）</td><td>any（配列）</td><td>プロパティ値一覧を取得する。順序は保証されない</td></tr>
+      <tr><td><code>im_object_toUpperCamelCase</code></td><td>object: object/map（単一）</td><td>object/map（単一）</td><td>プロパティ名をアッパーキャメルケースに変換する</td></tr>
+      <tr><td><code>im_object_toLowerCamelCase</code></td><td>object: object/map（単一）</td><td>object/map（単一）</td><td>プロパティ名をロワーキャメルケースに変換する</td></tr>
+      <tr><td><code>im_object_toUpperSnakeCase</code></td><td>object: object/map（単一）</td><td>object/map（単一）</td><td>プロパティ名をアッパースネークケースに変換する</td></tr>
+      <tr><td><code>im_object_toLowerSnakeCase</code></td><td>object: object/map（単一）</td><td>object/map（単一）</td><td>プロパティ名をロワースネークケースに変換する</td></tr>
+    </tbody>
+  </table>
+
+  <p class="text-secondary small mb-1">JSON</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>関数名</th><th>引数（順に）</th><th>戻り値</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td><code>im_to_json</code></td><td>object: object（単一）</td><td>string（単一）</td><td>オブジェクトをJSON文字列に変換する</td></tr>
+      <tr><td><code>im_parse_json</code></td><td>json: string（単一）</td><td>object（単一）</td><td>JSON文字列をオブジェクトに変換する。ルート要素が配列のJSON文字列には非対応</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="h4 mt-4">11.7 EL式（condition / defaultRoot）</h3>
   <p><code>im_sequence</code>・<code>im_startLoop</code>の<code>condition</code>は、<code>mappingRules</code>とは別に、<code>${...}</code>形式のEL（Expression Language）式の文字列として保持する。</p>
   <pre class="bg-white border rounded p-3">"condition": "${im_startLoop1.index%$const[\"3\"]==$const[\"0\"]}"
 "condition": "${im_startLoop1.index&lt;=task1.count}"</pre>
@@ -646,7 +764,6 @@
   <h2 class="h3 mt-4" id="s17">17. 対象範囲・未網羅事項</h2>
   <p>本書は、ZIPの構造、フロー定義、デザイナ表示情報の一般的な仕様を対象とする。以下は本書の対象外であり、詳細を確認できていない。</p>
   <ul>
-    <li>関数（11.5節）個々の<code>arguments</code>の型・順序（公式ドキュメントの各関数個別ページに記載があるが、本書には未転記）</li>
     <li><code>key.version</code>（userDefinitionのバージョン固定）が非<code>null</code>となるケースの挙動。非<code>null</code>の実例は確認できていない</li>
     <li>ユーザ定義タスクの処理種別のうち、<code>definitionData</code>の内部構造まで確認できているのは<code>"sql"</code>・<code>"javascript"</code>・<code>"rest"</code>・<code>"template"</code>の4種類のみ（<a href="logicdesigner-zip-spec-userdef.html#s6">ユーザ定義編6〜9章</a>）。公式ドキュメントによると全17種類の処理種別が存在し、残る13種類は内部構造未確認（<a href="logicdesigner-zip-spec-userdef.html#s10">ユーザ定義編10章</a>）</li>
     <li><code>definitionType: "javascript"</code>のスクリプト実行環境で、制限対象APIの具体的な一覧（判定基準は<a href="logicdesigner-zip-spec-userdef.html#s7">ユーザ定義編7章</a>を参照）</li>
