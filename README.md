@@ -13,7 +13,7 @@ IM-LogicDesignerは、GUIでロジックフローを組み立てる画面から�
 | [logicdesigner-zip-spec-flow.html](logicdesigner-zip-spec-flow.html)（フロー定義編） | `flow_definition.json` | ロジックフロー本体のZIP仕様。ZIP構造、フロー定義オブジェクト、`flowElements`、マッピング定義、デザイナ表示情報（`additional.ui`）、標準フロー要素早見表、新規ZIP生成手順 |
 | [logicdesigner-zip-spec-userdef.html](logicdesigner-zip-spec-userdef.html)（ユーザ定義編） | `user_definition.json` | テナントに共有登録するユーザ定義タスクのZIP仕様。`definitionType`（sql・javascript・rest等）ごとの内部構造、新規ユーザ定義ZIP生成手順 |
 | [logicdesigner-zip-spec-route.html](logicdesigner-zip-spec-route.html)（ルーティング定義編） | `flow_route.json` | フローをREST APIとして公開するルーティング設定のZIP仕様。認証方式、セキュアトークン、レスポンス種別など |
-| [logicdesigner-zip-spec-related.html](logicdesigner-zip-spec-related.html)（関連機能編） | IM-Copilot / IM-JobScheduler | IM-Copilot関連の標準要素（`im_chat`等）、`assistant_definition.json`によるアシスタント登録、IM-JobScheduler連携によるスケジュール実行トリガ |
+| [logicdesigner-zip-spec-related.html](logicdesigner-zip-spec-related.html)（関連機能編） | IM-Copilot / IM-JobScheduler | IM-Copilot関連の標準要素（`im_embedding`等。汎用的な`im_chat`はフロー定義編に記載）、`assistant_definition.json`によるアシスタント登録、IM-JobScheduler連携によるスケジュール実行トリガ |
 
 いずれもBootstrap 5（CDN読み込み）で作られた静的HTMLで、ビルド不要でブラウザから直接開けます。
 

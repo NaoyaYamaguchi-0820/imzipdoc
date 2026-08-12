@@ -41,11 +41,10 @@
   <p>この4点セットは、intra-mart公式のインポート・エクスポート機能が出力する単一のZIP形式とは異なり、複数の異なる形式のファイル・ZIPを束ねた「ガイド用リソース一式」と見られる。個々のファイル形式（<code>assistant_definition.json</code>・<code>job-scheduler.xml</code>）自体は、それぞれIM-Copilot・IM-JobScheduler側の実データ形式であると考えられるが、この束ね方自体が製品の標準エクスポート機能によるものかは未確認である。</p>
 
   <h2 class="h3 mt-4" id="s2">2. IM-Copilot関連の標準要素</h2>
-  <p>本サンプルには、フロー定義編10.3節の標準要素一覧（<code>key.type: "application"</code>）にない、新たな12種類の<code>key.id</code>が含まれている。ほとんどはLLM連携・ベクトルDB操作など、IM-Copilotの構成要素として使われるものだが、<code>im_errorEnd</code>・<code>im_sleep</code>のように汎用的な制御・ユーティリティ要素も含まれる。</p>
+  <p>本サンプルには、フロー定義編10.3節の標準要素一覧（<code>key.type: "application"</code>）にない、新たな11種類の<code>key.id</code>が含まれている（このほか<code>im_chat</code>も含まれるが、汎用性が高いためフロー定義編10.3節に記載した）。ほとんどはLLM連携・ベクトルDB操作など、IM-Copilotの構成要素として使われるものだが、<code>im_errorEnd</code>・<code>im_sleep</code>のように汎用的な制御・ユーティリティ要素も含まれる。</p>
   <table class="table table-bordered table-striped align-middle">
     <thead><tr><th>key.id</th><th>分類</th><th>properties</th><th>役割</th></tr></thead>
     <tbody>
-      <tr><td><code>im_chat</code></td><td>LLM連携</td><td><code>continueOnError</code></td><td>チャット補完（LLMへの問い合わせ）を実行する。入力は<code>messages</code>（<code>role</code>/<code>content</code>を持つメッセージの配列。<code>contents</code>配列を使えばテキスト・画像を組み合わせたマルチモーダルメッセージも表現できる）と<code>option</code>（<code>model</code>・<code>maxTokens</code>・<code>stops</code>・<code>streaming</code>・<code>temprature</code>【原文ママ、スペルミスと見られる】・<code>topP</code>）</td></tr>
       <tr><td><code>im_embedding</code></td><td>LLM連携</td><td><code>continueOnError</code></td><td>テキストをベクトル埋め込みに変換する。入力<code>input</code>、出力<code>embeddings</code></td></tr>
       <tr><td><code>im_vectorDbSimilaritySearch</code></td><td>ベクトルDB</td><td><code>continueOnError</code></td><td>ベクトル類似度検索。入力<code>embeddings</code>（ベクトル）・<code>category</code>（検索対象カテゴリ）</td></tr>
       <tr><td><code>im_vectorDbKeywordSearch</code></td><td>ベクトルDB</td><td><code>continueOnError</code></td><td>キーワード検索。入力<code>category</code>・<code>keywords</code>（配列）</td></tr>
@@ -154,7 +153,6 @@
     <li><code>assistant_definition.json</code>・<code>job-scheduler.xml</code>を含むリソース一式が、製品の標準エクスポート機能によって生成されたものか、ガイド用に手動で用意されたものかは未確認。</li>
     <li><code>assistantInfos[].assistantKey</code>に<code>im_logic_flow_assistant</code>以外の値が存在するか。</li>
     <li>IM-JobScheduler側で、実行スケジュール（cron式・実行間隔等）がどのファイル・データ形式で管理されているか。</li>
-    <li><code>im_chat</code>の<code>option</code>で指定可能な<code>model</code>の値の全量（サンプルでは<code>gpt-4o-mini</code>を使用）。</li>
     <li><code>im_splitText</code>の<code>chunkingMethodType</code>に指定できる値の全量（サンプルでは<code>RECURSIVE_CHUNKING</code>のみ確認）。</li>
     <li>IM-Copilot関連要素（本章2節）が、フロー定義編10.3節の標準要素一覧とあわせて何種類存在するか（公式ドキュメントの「IM-Copilot」カテゴリを参照すれば追加で判明する可能性がある）。</li>
   </ul>
