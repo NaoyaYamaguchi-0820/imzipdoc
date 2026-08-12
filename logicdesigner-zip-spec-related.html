@@ -32,17 +32,16 @@
   <p class="mb-2"><a href="index.html">&larr; 一覧に戻る</a></p>
   <h1 class="mb-3">IM-LogicDesigner ZIP仕様 - 関連機能編</h1>
   <p class="text-secondary">更新日: 2026-08-11</p>
-  <p>本書は、フロー定義編（<a href="logicdesigner-zip-spec-flow.html">logicdesigner-zip-spec-flow.html</a>）・ユーザ定義編（<a href="logicdesigner-zip-spec-userdef.html">logicdesigner-zip-spec-userdef.html</a>）・ルーティング定義編（<a href="logicdesigner-zip-spec-route.html">logicdesigner-zip-spec-route.html</a>）のいずれにも収まらない、関連機能・連携先製品の情報をまとめる。IM-Copilot（RAGアシスタント）のサンプルフローを含むリソース一式の解析から、IM-Copilot関連の標準要素、アシスタント登録用データ形式、およびフローのスケジュール実行トリガの仕組みが確認できた。</p>
+  <p>本書は、フロー定義編（<a href="logicdesigner-zip-spec-flow.html">logicdesigner-zip-spec-flow.html</a>）・ユーザ定義編（<a href="logicdesigner-zip-spec-userdef.html">logicdesigner-zip-spec-userdef.html</a>）・ルーティング定義編（<a href="logicdesigner-zip-spec-route.html">logicdesigner-zip-spec-route.html</a>）のいずれにも収まらない、関連機能・連携先製品の情報をまとめる。IM-Copilot（RAGアシスタント）のサンプルフローを含むリソース一式の解析から、アシスタント登録用データ形式、およびフローのスケジュール実行トリガの仕組みが確認できた。なお、このサンプルから確認できたIM-Copilot関連の標準フロー要素（<code>im_chat</code>・<code>im_embedding</code>等）は、<code>flow_definition.json</code>自体の仕様であるため<a href="logicdesigner-zip-spec-flow.html#s10-3">フロー定義編10.3節</a>に記載している。</p>
 
   <div class="card mb-4 toc">
     <div class="card-body">
       <strong>目次</strong>
       <ol class="mb-0">
         <li><a href="#s1">概要</a></li>
-        <li><a href="#s2">IM-Copilot関連の標準要素</a></li>
-        <li><a href="#s3">assistant_definition.json（IM-Copilotアシスタント登録）</a></li>
-        <li><a href="#s4">スケジュール実行トリガ（IM-JobScheduler連携）</a></li>
-        <li><a href="#s5">未検証事項</a></li>
+        <li><a href="#s2">assistant_definition.json（IM-Copilotアシスタント登録）</a></li>
+        <li><a href="#s3">スケジュール実行トリガ（IM-JobScheduler連携）</a></li>
+        <li><a href="#s4">未検証事項</a></li>
       </ol>
     </div>
   </div>
@@ -51,34 +50,13 @@
   <p>解析対象としたのは、「サンプルRAGアシスタント」を構築するためのリソース一式（ガイド資料に添付されたと見られるアーカイブ）で、次の4つを含んでいた。</p>
   <ul>
     <li><code>im_logicdesigner-data.zip</code> — フロー定義ZIP（<a href="logicdesigner-zip-spec-flow.html">フロー定義編</a>の形式）。「アシスタント応答」を行うフロー1件と、ベクトルストアを構築するフロー1件を含む</li>
-    <li><code>assistant_definition.json</code> — IM-Copilotの「アシスタント」を登録するためのデータ（本章3節）</li>
-    <li><code>job-scheduler.xml</code> — IM-JobScheduler（別製品）のジョブ・ジョブネット定義。ベクトルストア構築フローを定期実行するためのスケジュール設定（本章4節）</li>
+    <li><code>assistant_definition.json</code> — IM-Copilotの「アシスタント」を登録するためのデータ（本章2節）</li>
+    <li><code>job-scheduler.xml</code> — IM-JobScheduler（別製品）のジョブ・ジョブネット定義。ベクトルストア構築フローを定期実行するためのスケジュール設定（本章3節）</li>
     <li><code>im_bloommaker-data.zip</code> — IM-BloomMaker（別製品、ローコード画面作成ツール）のデータ。本書の対象外のため扱わない</li>
   </ul>
   <p>この4点セットは、intra-mart公式のインポート・エクスポート機能が出力する単一のZIP形式とは異なり、複数の異なる形式のファイル・ZIPを束ねた「ガイド用リソース一式」と見られる。個々のファイル形式（<code>assistant_definition.json</code>・<code>job-scheduler.xml</code>）自体は、それぞれIM-Copilot・IM-JobScheduler側の実データ形式であると考えられるが、この束ね方自体が製品の標準エクスポート機能によるものかは未確認である。</p>
 
-  <h2 class="h3 mt-4" id="s2">2. IM-Copilot関連の標準要素</h2>
-  <p>本サンプルには、フロー定義編10.3節の標準要素一覧（<code>key.type: "application"</code>）にない、新たな11種類の<code>key.id</code>が含まれている（このほか<code>im_chat</code>も含まれるが、汎用性が高いためフロー定義編10.3節に記載した）。ほとんどはLLM連携・ベクトルDB操作など、IM-Copilotの構成要素として使われるものだが、<code>im_errorEnd</code>・<code>im_sleep</code>のように汎用的な制御・ユーティリティ要素も含まれる。</p>
-  <table class="table table-bordered table-striped align-middle">
-    <thead><tr><th>key.id</th><th>分類</th><th>properties</th><th>役割</th></tr></thead>
-    <tbody>
-      <tr><td><code>im_embedding</code></td><td>LLM連携</td><td><code>continueOnError</code></td><td>テキストをベクトル埋め込みに変換する。入力<code>input</code>、出力<code>embeddings</code></td></tr>
-      <tr><td><code>im_vectorDbSimilaritySearch</code></td><td>ベクトルDB</td><td><code>continueOnError</code></td><td>ベクトル類似度検索。入力<code>embeddings</code>（ベクトル）・<code>category</code>（検索対象カテゴリ）</td></tr>
-      <tr><td><code>im_vectorDbKeywordSearch</code></td><td>ベクトルDB</td><td><code>continueOnError</code></td><td>キーワード検索。入力<code>category</code>・<code>keywords</code>（配列）</td></tr>
-      <tr><td><code>im_reciprocalRankFusion</code></td><td>ベクトルDB</td><td><code>continueOnError</code></td><td>複数の検索結果をReciprocal Rank Fusion（RRF）で統合する。入力<code>contentsList</code></td></tr>
-      <tr><td><code>im_addVectorDbContents</code></td><td>ベクトルDB</td><td><code>continueOnError</code></td><td>ベクトルDBへコンテンツを登録する。入力<code>category</code>・<code>contents</code></td></tr>
-      <tr><td><code>im_removeVectorDbContents</code></td><td>ベクトルDB</td><td><code>continueOnError</code></td><td>ベクトルDBからコンテンツを削除する。入力<code>category</code></td></tr>
-      <tr><td><code>im_splitText</code></td><td>テキスト処理</td><td><code>chunkingMethodType</code>（プルダウン。確認できた選択肢: <code>RECURSIVE_CHUNKING</code>）、<code>continueOnError</code></td><td>テキストをチャンクに分割する。入力<code>text</code></td></tr>
-      <tr><td><code>im_extractText</code></td><td>テキスト処理</td><td><code>continueOnError</code></td><td>ファイルからテキストを抽出する。入力<code>fileSize</code>・<code>fileName</code>・<code>fileData</code></td></tr>
-      <tr><td><code>im_copilotGetAssistantMessageHistory</code></td><td>IM-Copilot</td><td><code>continueOnError</code></td><td>アシスタントのメッセージ履歴を取得する。入力<code>threadId</code></td></tr>
-      <tr><td><code>im_errorEnd</code></td><td>制御</td><td><code>errorMessage</code>（必須、EL式可）</td><td>エラーとしてフローを終了する。<code>im_end</code>と異なり<code>mappingRules</code>は使わず、<code>properties.errorMessage</code>に直接メッセージ（またはEL式）を指定する。確認例: <code>"${$const.ERROR_MESSAGE}"</code></td></tr>
-      <tr><td><code>im_sleep</code></td><td>ユーティリティ</td><td><code>interrupt</code>（プルダウン: <code>ERROR</code>/<code>CONTINUE</code>）、<code>waitTime</code>（ミリ秒）</td><td>指定時間処理を停止する</td></tr>
-    </tbody>
-  </table>
-  <p>これらの要素も、フロー定義編10.1節で説明した共通の外形（<code>executeId</code>・<code>key</code>・<code>label</code>・<code>properties</code>・<code>mappingDefinition</code>）に従う。<code>im_errorEnd</code>・<code>im_sleep</code>を除き、いずれも<code>continueOnError</code>を持つ点は他の標準タスクと共通している。</p>
-  <div class="alert alert-warning" role="alert"><code>localUserDefinition</code>要素の<code>properties</code>について、フロー定義編10.5節では<code>definition</code>のみを持つ例を示したが、本サンプルでは<code>properties: { "definition": {...}, "continueOnError": false }</code>のように、<code>definition</code>と並んで<code>continueOnError</code>を直接持つ例が見られた。<code>localUserDefinition</code>要素も、参照する定義の種類によっては<code>continueOnError</code>相当の設定を要素自身の<code>properties</code>に持ちうる。</div>
-
-  <h2 class="h3 mt-4" id="s3">3. assistant_definition.json（IM-Copilotアシスタント登録）</h2>
+  <h2 class="h3 mt-4" id="s2">2. assistant_definition.json（IM-Copilotアシスタント登録）</h2>
   <p>IM-Copilotの「アシスタント」（チャット形式のUIから呼び出せる、あらかじめ定義された処理）を登録するためのデータ。二重JSONエンコードは行われていない。</p>
   <pre class="bg-white border rounded p-3">{
   "categories": [
@@ -116,7 +94,7 @@
     </tbody>
   </table>
 
-  <h2 class="h3 mt-4" id="s4">4. スケジュール実行トリガ（IM-JobScheduler連携）</h2>
+  <h2 class="h3 mt-4" id="s3">3. スケジュール実行トリガ（IM-JobScheduler連携）</h2>
   <p>フロー定義編17章で、フロー起動条件・トリガに関する記述が<code>flow_definition.json</code>内に見当たらないことを述べた。本サンプルから、少なくとも「スケジュール実行」によるトリガについては、LogicDesignerとは別製品の<strong>IM-JobScheduler</strong>が担っていることが確認できた。<code>job-scheduler.xml</code>（XML形式、<code>flow_definition.json</code>等とは異なりJSONではない）でジョブ・ジョブネットを定義し、その中でフローを呼び出す。</p>
   <pre class="bg-white border rounded p-3">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;root xmlns="http://www.intra-mart.jp/job-scheduler/data"&gt;
@@ -165,13 +143,12 @@
   </table>
   <p>このXML自体には、実行スケジュール（cron式や実行間隔）に相当する項目が含まれていない。スケジュールは、IM-JobScheduler側の別の設定（ジョブネットに対するスケジュール登録）で管理されており、このXMLはあくまで「どのジョブ・ジョブネットが存在するか」の定義であると考えられる。</p>
 
-  <h2 class="h3 mt-4" id="s5">5. 未検証事項</h2>
+  <h2 class="h3 mt-4" id="s4">4. 未検証事項</h2>
   <ul>
     <li><code>assistant_definition.json</code>・<code>job-scheduler.xml</code>を含むリソース一式が、製品の標準エクスポート機能によって生成されたものか、ガイド用に手動で用意されたものかは未確認。</li>
     <li><code>assistantInfos[].assistantKey</code>に<code>im_logic_flow_assistant</code>以外の値が存在するか。</li>
     <li>IM-JobScheduler側で、実行スケジュール（cron式・実行間隔等）がどのファイル・データ形式で管理されているか。</li>
-    <li><code>im_splitText</code>の<code>chunkingMethodType</code>に指定できる値の全量（サンプルでは<code>RECURSIVE_CHUNKING</code>のみ確認）。</li>
-    <li>IM-Copilot関連要素（本章2節）が、フロー定義編10.3節の標準要素一覧とあわせて何種類存在するか（公式ドキュメントの「IM-Copilot」カテゴリを参照すれば追加で判明する可能性がある）。</li>
+    <li>IM-Copilot関連の標準フロー要素（<a href="logicdesigner-zip-spec-flow.html#s10-3">フロー定義編10.3節</a>）が、公式ドキュメントの「IM-Copilot」カテゴリとあわせて何種類存在するか。</li>
   </ul>
 
 </main>

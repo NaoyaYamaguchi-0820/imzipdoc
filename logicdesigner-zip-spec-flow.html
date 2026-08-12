@@ -264,7 +264,7 @@
   </table>
   <p><code>key.version</code>は、<code>userDefinition</code>の特定バージョンを固定したい場合に使用する項目で、固定しない場合は<code>null</code>となる。</p>
 
-  <h3 class="h4 mt-4">10.3 標準要素（application）の主な種別</h3>
+  <h3 class="h4 mt-4" id="s10-3">10.3 標準要素（application）の主な種別</h3>
   <table class="table table-bordered table-striped align-middle">
     <thead><tr><th>key.id</th><th>分類</th><th>役割</th></tr></thead>
     <tbody>
@@ -284,11 +284,22 @@
       <tr><td><code>im_getFiles</code> / <code>im_removeStorage</code></td><td>ストレージ</td><td>ファイル一覧取得・削除。<code>recursive</code>を指定</td></tr>
       <tr><td><code>im_sendTextMail</code></td><td>ユーティリティ</td><td>テキストメール送信。<code>failOnError</code>を指定</td></tr>
       <tr><td><code>im_chat</code></td><td>LLM連携（IM-Copilot）</td><td>チャット補完（LLMへの問い合わせ）を実行する。<code>continueOnError</code>を持つ。入力は<code>messages</code>（<code>role</code>/<code>content</code>を持つメッセージの配列。<code>contents</code>配列を使えばテキスト・画像を組み合わせたマルチモーダルメッセージも表現できる）と<code>option</code>（<code>model</code>・<code>maxTokens</code>・<code>stops</code>・<code>streaming</code>・<code>temprature</code>【原文ママ、スペルミスと見られる】・<code>topP</code>）。<code>option.model</code>に指定可能な値の全量は未確認（サンプルでは<code>gpt-4o-mini</code>を使用）</td></tr>
+      <tr><td><code>im_embedding</code></td><td>LLM連携（IM-Copilot）</td><td>テキストをベクトル埋め込みに変換する。<code>continueOnError</code>を持つ。入力<code>input</code>、出力<code>embeddings</code></td></tr>
+      <tr><td><code>im_vectorDbSimilaritySearch</code></td><td>ベクトルDB（IM-Copilot）</td><td>ベクトル類似度検索。<code>continueOnError</code>を持つ。入力<code>embeddings</code>（ベクトル）・<code>category</code>（検索対象カテゴリ）</td></tr>
+      <tr><td><code>im_vectorDbKeywordSearch</code></td><td>ベクトルDB（IM-Copilot）</td><td>キーワード検索。<code>continueOnError</code>を持つ。入力<code>category</code>・<code>keywords</code>（配列）</td></tr>
+      <tr><td><code>im_reciprocalRankFusion</code></td><td>ベクトルDB（IM-Copilot）</td><td>複数の検索結果をReciprocal Rank Fusion（RRF）で統合する。<code>continueOnError</code>を持つ。入力<code>contentsList</code></td></tr>
+      <tr><td><code>im_addVectorDbContents</code></td><td>ベクトルDB（IM-Copilot）</td><td>ベクトルDBへコンテンツを登録する。<code>continueOnError</code>を持つ。入力<code>category</code>・<code>contents</code></td></tr>
+      <tr><td><code>im_removeVectorDbContents</code></td><td>ベクトルDB（IM-Copilot）</td><td>ベクトルDBからコンテンツを削除する。<code>continueOnError</code>を持つ。入力<code>category</code></td></tr>
+      <tr><td><code>im_splitText</code></td><td>テキスト処理（IM-Copilot）</td><td>テキストをチャンクに分割する。<code>chunkingMethodType</code>（プルダウン。確認できた選択肢: <code>RECURSIVE_CHUNKING</code>。他の値は未確認）、<code>continueOnError</code>を持つ。入力<code>text</code></td></tr>
+      <tr><td><code>im_extractText</code></td><td>テキスト処理（IM-Copilot）</td><td>ファイルからテキストを抽出する。<code>continueOnError</code>を持つ。入力<code>fileSize</code>・<code>fileName</code>・<code>fileData</code></td></tr>
+      <tr><td><code>im_copilotGetAssistantMessageHistory</code></td><td>IM-Copilot</td><td>アシスタントのメッセージ履歴を取得する。<code>continueOnError</code>を持つ。入力<code>threadId</code></td></tr>
+      <tr><td><code>im_errorEnd</code></td><td>制御</td><td>エラーとしてフローを終了する。<code>im_end</code>と異なり<code>mappingRules</code>は使わず、<code>properties.errorMessage</code>（必須、EL式可）に直接メッセージ（またはEL式）を指定する。確認例: <code>"${$const.ERROR_MESSAGE}"</code></td></tr>
+      <tr><td><code>im_sleep</code></td><td>ユーティリティ</td><td>指定時間処理を停止する。<code>interrupt</code>（プルダウン: <code>ERROR</code>/<code>CONTINUE</code>）、<code>waitTime</code>（ミリ秒）を持つ</td></tr>
       <tr><td><code>im_getAccountInfo</code> / <code>im_addAccount</code> / <code>im_activateAccount</code> / <code>im_grantAccountRole</code> / <code>im_immRegisterProfile</code></td><td>アカウント管理</td><td>intra-martアカウント・プロファイルの取得／作成／有効化／ロール付与</td></tr>
     </tbody>
   </table>
   <p>上記以外にも、テナントに登録されたユーザ定義タスク（<code>key.type: "userDefinition"</code>）が、その定義ID（任意の名称）を<code>key.id</code>としてそのまま持つ形で現れる。これらは製品標準ではなく、エクスポート元テナントで個別に定義されたタスクである。</p>
-  <p class="text-secondary small">上表は、フロー制御・汎用タスクを中心とした一覧である。公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/appendix/task/index.html">「5.2. タスク一覧」</a>によると、標準タスクは汎用タスク・ストレージ操作・基盤機能・アクセスセキュリティ・IM共通マスタ・Accel Collaboration・IMBox・IM-BPM・IM-BIS・IM-ContentsSearch・Salesforce・Office365・SSH・IBM Watson・プロジェクトチーム・IM-Knowledge・IM-BloomMaker・IM-Repository・Accel Studio・IM-Copilotの20カテゴリにわたって提供されており、上表はこのうち一部（主に汎用タスクと<code>im_chat</code>）を対象とする。<code>im_embedding</code>・ベクトルDB操作等、その他のIM-Copilot関連要素は<a href="logicdesigner-zip-spec-related.html#s2">関連機能編2章</a>を参照。テナント個別に登録されたユーザ定義タスクが、製品標準に似た命名（業務テンプレート由来の名称など）を持つ場合もあるが、それらは<code>key.type: "userDefinition"</code>であり標準要素ではない。</p>
+  <p class="text-secondary small">上表は、フロー制御・汎用タスクを中心とした一覧である。公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/appendix/task/index.html">「5.2. タスク一覧」</a>によると、標準タスクは汎用タスク・ストレージ操作・基盤機能・アクセスセキュリティ・IM共通マスタ・Accel Collaboration・IMBox・IM-BPM・IM-BIS・IM-ContentsSearch・Salesforce・Office365・SSH・IBM Watson・プロジェクトチーム・IM-Knowledge・IM-BloomMaker・IM-Repository・Accel Studio・IM-Copilotの20カテゴリにわたって提供されており、上表はこのうち一部（主に汎用タスクと、IM-Copilotサンプルフローの解析から確認できたIM-Copilotカテゴリの要素）を対象とする。テナント個別に登録されたユーザ定義タスクが、製品標準に似た命名（業務テンプレート由来の名称など）を持つ場合もあるが、それらは<code>key.type: "userDefinition"</code>であり標準要素ではない。</p>
 
   <h3 class="h4 mt-4">10.4 userDefinition要素（共有ユーザ定義タスク）</h3>
   <p><code>key.type: "userDefinition"</code>の要素は、定義本体を持たず、テナントに登録済みの定義を<code>key.id</code>で参照するのみである。要素自身の<code>properties</code>は通常<code>continueOnError</code>程度に限られ、入出力の受け渡しは<code>mappingDefinition.mappingRules</code>で行う。この定義本体自体の登録・エクスポート形式（<code>user_definition.json</code>）は<a href="logicdesigner-zip-spec-userdef.html">ユーザ定義編</a>を参照。</p>
@@ -351,6 +362,7 @@
   }
 }</pre>
   <p><code>definitionType</code>には<code>"sql"</code>以外に<code>"javascript"</code>・<code>"rest"</code>も存在し、他にも複数の処理種別が存在する。<code>elementId</code>・<code>elementProperties</code>の内容は<code>definitionType</code>ごとに異なる。詳細は<a href="logicdesigner-zip-spec-userdef.html">ユーザ定義編</a>を参照。</p>
+  <div class="alert alert-warning" role="alert">本節冒頭の例では<code>properties</code>が<code>definition</code>のみを持つが、IM-Copilotサンプルフローでは<code>properties: { "definition": {...}, "continueOnError": false }</code>のように、<code>definition</code>と並んで<code>continueOnError</code>を直接持つ例も見られた。<code>localUserDefinition</code>要素も、参照する定義の種類によっては<code>continueOnError</code>相当の設定を要素自身の<code>properties</code>に持ちうる。</div>
 
   <h2 class="h3 mt-4" id="s11">11. mappingDefinition（マッピング定義）</h2>
   <p>マッピングは、各フロー要素の<code>mappingDefinition.mappingRules</code>に配列として格納する。マッピングを持たない要素でも<code>mappingRules: []</code>を保持する場合があり、接続専用要素（<code>im_sequence</code>等）では<code>mappingDefinition</code>自体が<code>null</code>になる。</p>
@@ -639,7 +651,7 @@
     <li><code>definitionType: "javascript"</code>のスクリプト実行環境で、制限対象APIの具体的な一覧（判定基準は20.5節を参照）</li>
   </ul>
   <p class="text-secondary small">「ユーザ定義タスク自体の登録フォーマット」は20章で解決した。</p>
-  <p>なお、フロー起動条件・トリガ（スケジュール実行やイベント起動等の設定）に関する記述は<code>flow_definition.json</code>内には見当たらない。フロー本体の定義のみが含まれ、起動条件はLogicDesigner外の別画面・別データで管理されている。少なくともスケジュール実行によるトリガは、別製品IM-JobSchedulerの<code>job-scheduler.xml</code>（<code>LogicFlowExecutorJob</code>というJavaジョブ経由でフローを呼び出す）が担う。詳細は<a href="logicdesigner-zip-spec-related.html">関連機能編</a>4章を参照。</p>
+  <p>なお、フロー起動条件・トリガ（スケジュール実行やイベント起動等の設定）に関する記述は<code>flow_definition.json</code>内には見当たらない。フロー本体の定義のみが含まれ、起動条件はLogicDesigner外の別画面・別データで管理されている。少なくともスケジュール実行によるトリガは、別製品IM-JobSchedulerの<code>job-scheduler.xml</code>（<code>LogicFlowExecutorJob</code>というJavaジョブ経由でフローを呼び出す）が担う。詳細は<a href="logicdesigner-zip-spec-related.html">関連機能編</a>3章を参照。</p>
   <p>これらは、必要に応じて製品ドキュメント等を基に、個別仕様として追記する。</p>
 
   <h2 class="h3 mt-4" id="s18">18. 新規ZIP生成手順（実践ガイド）</h2>
