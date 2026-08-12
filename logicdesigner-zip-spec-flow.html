@@ -664,8 +664,9 @@
   <p>キーはUIノードID。値は<code>title</code>（通常<code>executeId</code>）、<code>label</code>（表示ラベル）、<code>inNum</code>/<code>outNum</code>（入出力ポート数）を持つ、ノード一覧表示などで使う簡易情報。</p>
 
   <h3 class="h4 mt-4" id="s12-5">12.5 mapping.json（グラフィカルマッピングの内部構造）</h3>
-  <div class="alert alert-danger" role="alert">要素が<code>mappingDefinition.mappingRules</code>を持つ場合、対応する<code>dataMap[uiNodeId].mapping.json</code>も正しい内容で埋める必要がある。<strong>空<code>{}</code>のまま（または<code>mappingRules</code>と不整合な内容）にしてZIPを生成すると、ZIP自体のインポートは成功しても、デザイナでそのフローを開いて保存した時点で<code>mappingRules</code>が消去される</strong>（マッピング先の出力が全て<code>null</code>になる）。<code>mapping.json</code>は単なる表示用の付随データではなく、デザイナが実際のマッピング内容の正とみなすデータである可能性が高い。</div>
+  <div class="alert alert-danger" role="alert">要素が<code>mappingDefinition.mappingRules</code>を持つ場合、対応する<code>dataMap[uiNodeId].mapping.json</code>も正しい内容で埋める必要がある。<strong>空<code>{}</code>のまま（または<code>mappingRules</code>と不整合な内容）にしてZIPを生成すると、ZIP自体のインポートは成功しても、デザイナでそのフローを開いて保存した時点で<code>mappingRules</code>が消去される</strong>（マッピング先の出力が全て<code>null</code>になる）。<code>mapping.json</code>は単なる表示用の付随データではなく、デザイナが実際のマッピング内容の正（source of truth）とみなすデータであり、<code>mappingRules</code>はそこから解決できる参照だけを都度導出した結果に近いと見られる（実機での検証内容は次の段落を参照）。</div>
   <p><code>mapping.json</code>は、その要素の<code>mappingRules</code>をグラフィカルエディタ上で表現するための、独立した小さなノード・接続グラフである。</p>
+  <p>この「<code>mapping.json</code>が正、<code>mappingRules</code>は導出結果」という関係は、次の実機での挙動からも裏付けられる。ある要素の<code>executeId</code>をリネームすると（16章参照）、他要素からその<code>executeId</code>を参照している<code>mappingRules</code>は、パスが解決できなくなった時点でエクスポート結果から消える。しかし、その状態から<code>executeId</code>を元の名前に戻すと、デザイナのGUI上でマッピングが何もしていないのに再び「復活」して表示される。これは、<code>mapping.json</code>側に残っていた（リネーム前の<code>executeId</code>を指す）パス文字列が、名前を戻した時点で再び有効な参照として解決され、そこから<code>mappingRules</code>が改めて導出されたためと考えられる。つまり<code>mapping.json</code>のパス文字列は、<code>executeId</code>の変更だけでは自動的に書き換わらず、名前が一致しない間だけ一時的に無効化（<code>mappingRules</code>側から見えなくなる）される、という挙動である。</p>
   <table class="table table-bordered table-striped align-middle">
     <thead><tr><th>項目</th><th>説明</th></tr></thead>
     <tbody>
@@ -758,7 +759,7 @@
     <li>カテゴリID、フローID、バージョン、図ファイル名の対応を崩さない。</li>
     <li><code>mappingOrder</code>・<code>versionComment</code>のようにエクスポート元によって有無が変わる項目があるため、キー欠落を前提に読み込み処理を実装する。</li>
     <li>定数（<code>constants</code>）を追加・変更する場合は、定義自体だけでなく、各要素の<code>mappingDefinition.mappingRules</code>内の<code>$const/&lt;name&gt;</code>参照との整合性も確認する。</li>
-    <li><strong><code>executeId</code>のリネームは、それを参照している他要素の<code>mappingRules</code>を巻き込んで壊す。</strong>デザイナ上で要素の<code>executeId</code>を変更（例: <code>generate_application</code>→<code>generate_application1</code>）しても、内部の<code>key.id</code>／<code>definitionId</code>（<code>localUserDefinition</code>の定義本体を指すID）は追従して変わらない一方、他要素側で旧<code>executeId</code>をパスのプレフィックスとして参照している<code>mappingRules</code>（例: <code>im_chat</code>側の<code>source.path: "generate_application/messages"</code>）は自動更新されず、保存時に無効な参照として扱われて<strong>ルールごと消える</strong>（実機で確認）。単純な値参照のルールは丸ごと削除され、関数呼び出しを伴うルールは関数呼び出しのシェルだけが残って引数が空になるなど、壊れ方も一様ではない。要素の<code>executeId</code>を変更する場合は、影響を受ける全ての<code>mappingRules</code>を手動で洗い出して追従させる必要がある。</li>
+    <li><strong><code>executeId</code>のリネームは、それを参照している他要素の<code>mappingRules</code>を巻き込んで壊す。</strong>デザイナ上で要素の<code>executeId</code>を変更（例: <code>generate_application</code>→<code>generate_application1</code>）しても、内部の<code>key.id</code>／<code>definitionId</code>（<code>localUserDefinition</code>の定義本体を指すID）は追従して変わらない一方、他要素側で旧<code>executeId</code>をパスのプレフィックスとして参照している<code>mappingRules</code>（例: <code>im_chat</code>側の<code>source.path: "generate_application/messages"</code>）は自動更新されず、保存時に無効な参照として扱われて<strong>ルールごと消える</strong>（実機で確認）。単純な値参照のルールは丸ごと削除され、関数呼び出しを伴うルールは関数呼び出しのシェルだけが残って引数が空になるなど、壊れ方も一様ではない。ただし、リネームした<code>executeId</code>を元の名前に戻すと、GUI上でマッピングが再び現れる（<code>mapping.json</code>側のパス文字列は書き換わらずに残っているため。12.5節参照）。要素の<code>executeId</code>を変更する場合は、影響を受ける全ての<code>mappingRules</code>を手動で洗い出して追従させる必要がある。</li>
     <li>仕様の詳細は、利用するintra-mart環境のバージョンとエクスポート対象に応じて確認する。</li>
   </ul>
 
