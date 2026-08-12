@@ -225,10 +225,11 @@
       <tr><td><code>byte</code></td><td>バイト列（バイナリデータ）</td></tr>
       <tr><td><code>storage</code></td><td>ストレージ上のファイル・ディレクトリを指すパス値（<code>im_publicStorage</code>等のストレージ系タスクの出力型）</td></tr>
       <tr><td><code>map</code></td><td>マップ（キー・バリュー構造）</td></tr>
-      <tr><td><code>any</code></td><td>任意の型（型を特定しない値）。REST呼び出しタスク（<code>im_httpclient</code>、20.6節）の型定義一覧に参照用として現れる</td></tr>
+      <tr><td><code>any</code></td><td>任意の型（型を特定しない値）。REST呼び出しタスク（<code>im_httpclient</code>、<a href="logicdesigner-zip-spec-userdef.html#s8">ユーザ定義編8章</a>）の型定義一覧に参照用として現れる</td></tr>
     </tbody>
   </table>
   <p>上記以外の<code>typeId</code>は独自定義の複合型（<code>typeDefinitions</code>内の<code>id</code>）を指す。命名は自動採番（<code>im_logic_object_N</code>）またはユーザ指定名になる。</p>
+  <div class="alert alert-info" role="alert">上表は実際のフロー定義ZIPから確認できた基本型である。公式の「IM-LogicDesigner仕様書」<a href="logicdesigner-zip-spec-route.html#s5">「4.3.14. JSON上でのデータの表現」（ルーティング定義編5章に型対応表を転記）</a>によると、基本型にはこのほかにも<code>short</code>・<code>long</code>・<code>float</code>・<code>bigdecimal</code>・<code>biginteger</code>・<code>locale</code>（<a href="logicdesigner-zip-spec-userdef.html#s9">ユーザ定義編9章</a>参照）・<code>timezone</code>・<code>calendar</code>・<code>imdatetime</code>・<code>imduration</code>・<code>sqltimestamp</code>・<code>binary</code>・<code>object</code>が存在する。これらは実際のフロー定義ZIPのサンプルでは未観測のため、上表には含めていない。</div>
 
   <h3 class="h4 mt-4">9.3 配列・単一項目</h3>
   <ul>
@@ -647,11 +648,12 @@
   <ul>
     <li>関数（11.5節）個々の<code>arguments</code>の型・順序（公式ドキュメントの各関数個別ページに記載があるが、本書には未転記）</li>
     <li><code>key.version</code>（userDefinitionのバージョン固定）が非<code>null</code>となるケースの挙動。非<code>null</code>の実例は確認できていない</li>
-    <li>ユーザ定義タスクの処理種別のうち、<code>definitionData</code>の内部構造まで確認できているのは<code>"sql"</code>・<code>"javascript"</code>・<code>"rest"</code>の3種類のみ（20章）。他に8種類の処理種別が存在することは公式ドキュメントから分かっているが、内部構造は未確認（20.7節）</li>
-    <li><code>definitionType: "javascript"</code>のスクリプト実行環境で、制限対象APIの具体的な一覧（判定基準は20.5節を参照）</li>
+    <li>ユーザ定義タスクの処理種別のうち、<code>definitionData</code>の内部構造まで確認できているのは<code>"sql"</code>・<code>"javascript"</code>・<code>"rest"</code>・<code>"template"</code>の4種類のみ（<a href="logicdesigner-zip-spec-userdef.html#s6">ユーザ定義編6〜9章</a>）。公式ドキュメントによると全17種類の処理種別が存在し、残る13種類は内部構造未確認（<a href="logicdesigner-zip-spec-userdef.html#s10">ユーザ定義編10章</a>）</li>
+    <li><code>definitionType: "javascript"</code>のスクリプト実行環境で、制限対象APIの具体的な一覧（判定基準は<a href="logicdesigner-zip-spec-userdef.html#s7">ユーザ定義編7章</a>を参照）</li>
+    <li>フロートリガ（下記）の発生条件の具体的な種類（スケジュール・イベント等）、および対応するエクスポート・ZIP形式の有無</li>
   </ul>
-  <p class="text-secondary small">「ユーザ定義タスク自体の登録フォーマット」は20章で解決した。</p>
-  <p>なお、フロー起動条件・トリガ（スケジュール実行やイベント起動等の設定）に関する記述は<code>flow_definition.json</code>内には見当たらない。フロー本体の定義のみが含まれ、起動条件はLogicDesigner外の別画面・別データで管理されている。少なくともスケジュール実行によるトリガは、別製品IM-JobSchedulerが担う（詳細な設定形式は本書の対象外）。</p>
+  <p class="text-secondary small">「ユーザ定義タスク自体の登録フォーマット」は<a href="logicdesigner-zip-spec-userdef.html">ユーザ定義編</a>で解決した。</p>
+  <p>なお、フロー起動条件・トリガ（スケジュール実行やイベント起動等の設定）に関する記述は<code>flow_definition.json</code>内には見当たらない。フロー本体の定義のみが含まれ、起動条件はLogicDesigner外の別画面・別データで管理されている。公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/flow_trigger/index.html">「4.4. フロートリガ」</a>によると、LogicDesigner自身にも「フロートリガ」という起動条件設定の仕組みがあり、対象の<code>flowId</code>・<code>version</code>、発生条件、有効／無効の状態、受信データをフロー入力にマッピングする設定を保持する。発生条件が満たされた際はIM-Propagationを介してデータを受信しフローを実行する仕組みで、発生条件の具体的な種類（スケジュール・イベント等）や、これに対応するエクスポート形式は同ページには明記されていない。これとは別に、少なくともスケジュール実行によるトリガは、別製品IM-JobSchedulerが担うことも確認できている（詳細な設定形式はいずれも本書の対象外）。</p>
   <p>これらは、必要に応じて製品ドキュメント等を基に、個別仕様として追記する。</p>
 
   <h2 class="h3 mt-4" id="s18">18. 新規ZIP生成手順（実践ガイド）</h2>

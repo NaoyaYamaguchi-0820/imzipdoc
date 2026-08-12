@@ -42,8 +42,9 @@
         <li><a href="#s2">ZIP構造</a></li>
         <li><a href="#s3">トップレベル構造（配列）</a></li>
         <li><a href="#s4">エントリの項目</a></li>
-        <li><a href="#s5">新規生成時の注意</a></li>
-        <li><a href="#s6">未検証事項</a></li>
+        <li><a href="#s5">REST API実行時の仕様</a></li>
+        <li><a href="#s6">新規生成時の注意</a></li>
+        <li><a href="#s7">未検証事項</a></li>
       </ol>
     </div>
   </div>
@@ -94,14 +95,44 @@
       <tr><td><code>version</code></td><td>数値</td><td>対象フローのバージョン。存在する具体的なバージョン番号、または最新バージョンを表す<code>-1</code>を指定できる</td></tr>
       <tr><td><code>authentication</code></td><td>文字列</td><td>認証方式。公式ドキュメントによると3種類存在する。<code>IMAuthentication</code>（特別な認証処理を行わず、現在のCookieに紐づくセッションの認証状態のままロジックフローを実行する）、Basic認証（ユーザ名・パスワードで認証。マルチテナント環境では「ユーザコード」または「テナントID\ユーザコード」を指定可能）、OAuth（リクエストヘッダに<code>Authorization: Bearer &lt;access_token&gt;</code>を付与して認証）</td></tr>
       <tr><td><code>authenticationParam</code></td><td>文字列または<code>null</code></td><td>認証方式に応じた追加パラメータ。<code>IMAuthentication</code>では<code>null</code>。Basic認証・OAuthの場合に指定する値の形式は未確認</td></tr>
-      <tr><td><code>authzUri</code></td><td>文字列</td><td>認可URI。<code>im-logic-rest://&lt;route&gt;</code>形式</td></tr>
+      <tr><td><code>authzUri</code></td><td>文字列</td><td>認可URI。<code>im-logic-rest://&lt;route&gt;</code>形式。IM-Authzによる認可判定に使われ、公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/routing/index.html">「4.3. フロールーティング」</a>によると、異なるフロールーティング間で同一の認可URIを指定することはできない（一意である必要がある）</td></tr>
       <tr><td><code>secured</code></td><td>真偽値</td><td>セキュアトークンを使用するか。有効にすると、リクエストヘッダ<code>X-Intramart-Secure-Token</code>またはリクエストパラメータ<code>im_secure_token</code>によるトークンチェックが行われる。トークンは同一セッション内で発行・使用する必要がある</td></tr>
       <tr><td><code>responseType</code></td><td>文字列</td><td>レスポンスの変換方式。公式ドキュメントによると9種類存在する: JSON変換（内部識別子<code>imJsonResponse</code>を確認済み）、テキスト（出力データの<code>body</code>プロパティ値をそのまま返す）、HTML、XML、JSON文字列、任意Content-Type、ファイルダウンロード、ファイルインライン表示、ファイルバイナリ返却。<code>imJsonResponse</code>以外の内部識別子は未確認</td></tr>
       <tr><td><code>responseHeader</code></td><td>オブジェクト</td><td>レスポンスヘッダのキー・値。<code>Content-Type</code>は、出力データ側のプロパティまたはこの<code>responseHeader</code>で指定でき、いずれも未指定の場合は<code>application/octet-stream</code>が適用される。サンプルでは空オブジェクト</td></tr>
     </tbody>
   </table>
 
-  <h2 class="h3 mt-4" id="s5">5. 新規生成時の注意</h2>
+  <h2 class="h3 mt-4" id="s5">5. REST API実行時の仕様</h2>
+  <p>ZIP・JSONの構造そのものではなく、生成した<code>flow_route.json</code>が実際にどうREST APIとして動作するかについて、公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/routing/index.html">「4.3. フロールーティング」</a>で説明されている実行時仕様を補足する。</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>項目</th><th>説明</th></tr></thead>
+    <tbody>
+      <tr><td>URL形式</td><td><code>&lt;SCHEME&gt;://&lt;HOST&gt;(:&lt;PORT&gt;)/&lt;CONTEXT_PATH&gt;/logic/api/${route}</code>。<code>${route}</code>部分に<code>route</code>の値が入る</td></tr>
+      <tr><td>セッション管理</td><td>リクエストヘッダ<code>X-Intramart-Session</code>で<code>keep</code>・<code>once</code>・<code>never</code>のいずれかを指定できる。省略時は<code>once</code>と同じ動作になる</td></tr>
+      <tr><td>エラーレスポンス</td><td>通常<code>application/json</code>形式（<code>{"error": true, "errorMessage": "..."}</code>）で返却される。ステータスコードは、入力データ形式が不正な場合<code>400</code>、未認証の場合<code>401</code>、セキュアトークン検証失敗または認可権限がない場合<code>403</code>、対応するフロールーティングが存在しない場合<code>404</code>、フロー実行時のエラーの場合<code>500</code></td></tr>
+      <tr><td>Swagger出力</td><td><code>&lt;CONTEXT_PATH&gt;/all-api-docs</code>で全REST APIの仕様、<code>&lt;CONTEXT_PATH&gt;/api-docs/${category-id}</code>で特定カテゴリの仕様をSwagger形式で取得できる</td></tr>
+      <tr><td>マルチテナント対応</td><td>リクエスト情報からテナントを自動解決する運用の場合はURLにテナント情報を含める。自動解決を使わない場合、<code>IMAuthentication</code>では事前ログインが必要、Basic認証ではユーザ名を<code>&lt;テナントID&gt;\&lt;ユーザコード&gt;</code>形式で指定する</td></tr>
+    </tbody>
+  </table>
+  <p><code>inputDataDefinition</code>・<code>outputDataDefinition</code>（フロー定義編9章）の基本型は、REST APIの入出力ではJSONの型に変換される。公式の「IM-LogicDesigner仕様書」「4.3.14. JSON上でのデータの表現」による対応は次のとおり。</p>
+  <table class="table table-bordered table-striped align-middle">
+    <thead><tr><th>基本型（typeId）</th><th>JSON表現</th><th>備考</th></tr></thead>
+    <tbody>
+      <tr><td><code>string</code></td><td>String</td><td></td></tr>
+      <tr><td><code>boolean</code></td><td>Boolean</td><td></td></tr>
+      <tr><td><code>byte</code> / <code>character</code> / <code>short</code> / <code>integer</code> / <code>long</code> / <code>float</code> / <code>double</code></td><td>Number</td><td></td></tr>
+      <tr><td><code>bigdecimal</code></td><td>String</td><td>数値表現の文字列</td></tr>
+      <tr><td><code>biginteger</code></td><td>String</td><td>整数表現の文字列</td></tr>
+      <tr><td><code>locale</code></td><td>String</td><td>ロケールIDを表す文字列</td></tr>
+      <tr><td><code>timezone</code></td><td>String</td><td>タイムゾーンIDを表す文字列</td></tr>
+      <tr><td><code>calendar</code> / <code>date</code> / <code>imdatetime</code> / <code>sqldate</code> / <code>sqltimestamp</code></td><td>String</td><td>ISO 8601の拡張形式</td></tr>
+      <tr><td><code>map</code> / <code>object</code></td><td>Object</td><td></td></tr>
+      <tr><td><code>imduration</code> / <code>binary</code> / <code>any</code></td><td>（非対応）</td><td>JSON形式では表現できない</td></tr>
+    </tbody>
+  </table>
+  <div class="alert alert-warning" role="alert">この型対応表はルーティング（REST API）仕様のページに掲載されているもので、フロー定義編9.2節に記載した基本型一覧（実際のフロー定義ZIPから確認できた<code>string</code>・<code>character</code>・<code>integer</code>・<code>double</code>・<code>boolean</code>・<code>date</code>・<code>sqldate</code>・<code>byte</code>・<code>storage</code>・<code>map</code>・<code>any</code>の11種類）よりも種類が多い。特に<code>byte</code>はここではNumber（数値）として説明されており、フロー定義編で「バイト列（バイナリデータ）」として観測された用途との関係は未確認（バイナリデータを表す型は、本来は非対応の<code>binary</code>である可能性がある）。</div>
+
+  <h2 class="h3 mt-4" id="s6">6. 新規生成時の注意</h2>
   <ul>
     <li><code>flowId</code>は、対応する<code>flow_definition.json</code>側のフローの<code>flowId</code>と一致させる。フロー本体とルーティング設定は別々のZIPで管理されるため、生成時にこの対応関係が崩れないよう注意する。</li>
     <li>トップレベルは配列であり、<code>flowCategories</code>/<code>flowDefinitions</code>のようなラッパーオブジェクトを持たない。</li>
@@ -109,9 +140,10 @@
     <li><code>route</code>の命名規則（使用可能文字、同一ルートの重複可否）は利用環境の制約を確認する。</li>
     <li>特定バージョンに固定する必要がない限り、<code>version</code>は<code>-1</code>（最新バージョン）を指定しておくと、フロー側のバージョンを更新してもルーティング側の修正が不要になる。</li>
     <li><code>secured: true</code>にする場合は、呼び出し側が<code>X-Intramart-Secure-Token</code>ヘッダまたは<code>im_secure_token</code>パラメータでトークンを送信できるように、あわせて設計する。</li>
+    <li><code>authzUri</code>は他のルーティングと重複しない値にする。</li>
   </ul>
 
-  <h2 class="h3 mt-4" id="s6">6. 未検証事項</h2>
+  <h2 class="h3 mt-4" id="s7">7. 未検証事項</h2>
   <ul>
     <li>同一<code>flowId</code>に対する複数ルーティング（メソッド違い等）の登録可否。</li>
     <li>Basic認証・OAuthを指定した場合の<code>authenticationParam</code>の具体的な形式。</li>
@@ -119,6 +151,7 @@
     <li><code>responseHeader</code>に値を設定した場合の具体的な構造（キー・値のペアか、それ以上の入れ子構造を持つか）。</li>
     <li>本ZIPに複数のルーティングエントリを含めた場合の挙動（一括登録されるか、1件ずつの扱いか）。</li>
     <li><code>icon_data/</code>（2章）の具体的な内部構造（ファイル形式、<code>iconId</code>とユーザ定義側の対応関係）。</li>
+    <li><code>byte</code>型がフロー定義ZIP内でバイナリデータ用途に使われている点と、ルーティング仕様上のJSON表現（Number）との関係。</li>
   </ul>
 
 </main>

@@ -67,7 +67,7 @@
 └── icon_data/
     ├── designer/&lt;iconId&gt;
     └── palette/&lt;iconId&gt;</pre>
-  <p><code>icon_data/designer/&lt;iconId&gt;</code>・<code>icon_data/palette/&lt;iconId&gt;</code>は、ユーザ定義タスクにアイコンを設定した場合の画像データと見られる（<code>definitionData.iconId</code>と対応すると考えられるが未確認）。アイコンを設定していないユーザ定義（本書のサンプルはすべて<code>iconId: null</code>）では、この<code>icon_data/</code>ディレクトリ自体が省略される。また、IM-LogicDesignerのエクスポート機能は本来、フロー定義・ユーザ定義・ルーティング定義を含む全データを一括で1つのZIPにまとめて出力するものであり、<code>user_definition.json</code>単体で構成されたZIP（本書のサンプル）は、その一部を切り出した個別エクスポートに相当する（<a href="logicdesigner-zip-spec-route.html">ルーティング定義編</a>2章参照）。</p>
+  <p><code>icon_data/designer/&lt;iconId&gt;</code>・<code>icon_data/palette/&lt;iconId&gt;</code>は、ユーザ定義タスクにアイコンを設定した場合の画像データと見られる（<code>definitionData.iconId</code>と対応すると考えられるが、ファイル名とidの対応関係自体は未確認）。アイコンを設定していないユーザ定義（本書のサンプルはすべて<code>iconId: null</code>）では、この<code>icon_data/</code>ディレクトリ自体が省略される。公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/user_definition/index.html">「4.2.4. ユーザアイコン」</a>によると、アイコン画像はパレット用（40×40）とデザイナ用（50×50）の2サイズをそれぞれ登録し、形式はSVG・PNG・JPEG・GIF・BMPに対応する（<code>designer/</code>・<code>palette/</code>の2ディレクトリはこの2サイズに対応すると見られる）。SVG形式の場合、1行目に<code>&lt;?xml version="1.0" encoding="utf-8"?&gt;</code>の記述が必須となる。また、IM-LogicDesignerのエクスポート機能は本来、フロー定義・ユーザ定義・ルーティング定義を含む全データを一括で1つのZIPにまとめて出力するものであり、<code>user_definition.json</code>単体で構成されたZIP（本書のサンプル）は、その一部を切り出した個別エクスポートに相当する（<a href="logicdesigner-zip-spec-route.html">ルーティング定義編</a>2章参照）。</p>
 
   <h2 class="h3 mt-4" id="s3">3. トップレベル構造</h2>
   <pre class="bg-white border rounded p-3">{
@@ -94,7 +94,7 @@
   <p>フロー定義編の<code>flowCategories</code>（4章）とほぼ同形式だが、次の相違点がある。</p>
   <ul>
     <li><code>iconId</code>を持つ（<code>flowCategories</code>にはない項目）。サンプルでは空文字列</li>
-    <li><code>parentId</code>を持たない。ユーザ定義カテゴリが<code>flowCategories</code>同様の親子ツリー構造をサポートするかは未確認</li>
+    <li><code>parentId</code>を持たない。ユーザ定義カテゴリが<code>flowCategories</code>同様の親子ツリー構造をサポートするかは未確認（公式の「IM-LogicDesigner仕様書」「4.2.3. ユーザカテゴリ」にも親子構造に関する記載はなく、フラットな分類のみの可能性がある）</li>
   </ul>
 
   <h2 class="h3 mt-4" id="s5">5. userDefinitions と definitionオブジェクト</h2>
@@ -205,20 +205,25 @@
     </tbody>
   </table>
   <p><code>inputDataDefinition</code>には、テンプレート内で<code>${...}</code>により参照する変数を持つオブジェクト（サンプルでは<code>data</code>という名前の複合型プロパティの中に、実際に参照する値を格納）に加えて、<strong>基本型<code>locale</code></strong>を持つ<code>locale</code>という名前のプロパティが存在した。<code>outputDataDefinition</code>は、展開結果の文字列を1項目（<code>output</code>、<code>string</code>型）持つ単純な構造。</p>
-  <div class="alert alert-info" role="alert"><code>locale</code>は、フロー定義編9.2節の基本型一覧に未掲載の型である。テンプレート処理時のロケール（<code>localizedTemplate</code>のどのロケール版を使うか等に関わると考えられる）を表す基本型と見られる。</div>
+  <div class="alert alert-info" role="alert"><code>locale</code>は、フロー定義編9.2節の基本型一覧に未掲載の型である。公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/routing/index.html">「4.3.14. JSON上でのデータの表現」</a>（ルーティング定義編のREST API入出力に関する節）には、<code>locale</code>（ロケールIDを表す文字列）を含む基本型の対応表が掲載されており、これはフロー定義編9.2節の基本型一覧よりも広い型セットである。テンプレート処理時のロケール（<code>localizedTemplate</code>のどのロケール版を使うか等に関わると考えられる）を表す基本型と見られる。</div>
 
   <h2 class="h3 mt-4" id="s10">10. その他のdefinitionType（未確認）</h2>
-  <p>公式の「IM-LogicDesignerチュートリアルガイド」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_tutorial_guide/texts/advanced/user_definition/index.html">「5.4. ユーザ定義の作成」</a>によると、ユーザ定義タスクの処理種別には、本書で<code>definitionData</code>の内部構造まで確認できている<code>"sql"</code>・<code>"javascript"</code>・<code>"rest"</code>・<code>"template"</code>に加えて、次の7種類が存在する。</p>
+  <p>公式の「IM-LogicDesigner仕様書」<a href="https://document.intra-mart.jp/library/iap/public/im_logic/im_logic_specification/texts/function_specification/user_definition/index.html">「4.2.5.1. タイプ別詳細仕様」</a>によると、ユーザ定義タスクの処理種別は全<strong>17種類</strong>存在する。本書で<code>definitionData</code>の内部構造（<code>elementId</code>・<code>elementProperties</code>の実際の値）まで確認できているのは<code>"sql"</code>・<code>"javascript"</code>・<code>"rest"</code>・<code>"template"</code>の4種類のみで、残る13種類は次のとおり（画面上の機能名。括弧内は同仕様書に基づく概要）。<code>definitionType</code>文字列や<code>elementId</code>等の内部識別子は、いずれの処理種別についても製品ドキュメントには明記されておらず、ZIPの実データでの確認が必要である。</p>
   <ul>
-    <li>Database Fetch</li>
-    <li>CSV Fetch</li>
-    <li>Excel入力</li>
-    <li>Excel出力</li>
-    <li>XML解析</li>
-    <li>HTML解析</li>
-    <li>BIS申請/承認</li>
+    <li>ストアド（ストアドプロシージャの実行。データベース種別として<code>TENANT</code>・<code>SHARED</code>を指定）</li>
+    <li>Database Fetch（SQLクエリの実行結果をフェッチサイズ単位で分割取得し、繰り返し処理する）</li>
+    <li>CSV Fetch（CSVファイルを読み込み、レコード単位の繰り返し処理を行う）</li>
+    <li>CSV出力（レコードをCSVファイルへ出力する。一括出力・繰り返し要素での追記の両方に対応）</li>
+    <li>Excel入力（Excelファイルの指定セル・範囲からデータを読み込む）</li>
+    <li>Excel出力（テンプレートファイルまたは新規ファイルへ、指定セル・範囲でデータを書き込む）</li>
+    <li>XML解析（XMLを読み込み、階層指定またはXPathで任意の要素を取得する。DTD使用のXMLは非対応）</li>
+    <li>HTML解析（HTMLを読み込み、階層指定またはCSSセレクタで任意の要素を取得する）</li>
+    <li>Salesforceオブジェクト操作（SalesforceオブジェクトへのCREATE/READ/UPDATE/DELETE）</li>
+    <li>Salesforce SOQL（SOQLによるクエリ実行。ページネーション対応）</li>
+    <li>Salesforceバッチ（Bulk APIによるジョブへのバッチ追加。Insert/Update/Upsert/Delete/HardDelete）</li>
+    <li>BIS申請/承認（IM-BISワークフローの起票・申請・再申請・承認等の処理）</li>
+    <li>Forma登録情報（Formaアプリケーションの登録データの取得・登録・更新）</li>
   </ul>
-  <p>これらの<code>definitionType</code>文字列そのもの、および<code>definitionData</code>の内部構造（<code>elementId</code>・<code>elementProperties</code>）は、ZIPの実データでは未確認である。</p>
 
   <h2 class="h3 mt-4" id="s11">11. 新規ユーザ定義ZIP生成手順（実践ガイド）</h2>
   <p>フロー定義編18章と同様、専用の生成ツールを介さず、本書の内容だけを頼りにゼロから<code>user_definition.json</code>とZIPを組み立てる場合の実践的な手順をまとめる。</p>
@@ -296,10 +301,10 @@
   <h2 class="h3 mt-4" id="s12">12. 未検証事項</h2>
   <ul>
     <li><code>userCategories</code>が親子ツリー構造（<code>flowCategories</code>同様の<code>parentId</code>）をサポートするか。</li>
-    <li>9章で挙げた8種類の<code>definitionType</code>文字列そのもの、および<code>definitionData</code>の内部構造。</li>
+    <li>10章で挙げた13種類の<code>definitionType</code>文字列そのもの、および<code>definitionData</code>の内部構造。</li>
     <li>JavaScript実行環境における制限対象APIの具体的な一覧（判定基準は7章で確認できているが、個別のAPI名は製品ドキュメントに明記されていない）。</li>
     <li><code>outputDataDefinition</code>の<code>body</code>型定義が、呼び出し先レスポンスの変化に応じてどう更新されるか（再度「JSON入力」が必要かなど）。</li>
-    <li><code>icon_data/</code>（2章）の具体的な内部構造（画像ファイル形式、<code>iconId</code>との対応関係）。</li>
+    <li><code>icon_data/</code>（2章）の<code>iconId</code>とファイル名の具体的な対応関係（画像ファイル形式・サイズは4.2.4節の公式情報から判明済み）。</li>
     <li>本章の手順で生成したZIP単体（フローを介さず、ユーザ定義ZIP自体）をインポートし、デザイナで開いて保存した場合に、フロー定義編で見られたような正規化（既定値の省略等）が同様に起きるか。</li>
     <li><code>localize</code>（単数形）に実際に多言語名を設定した場合の内部構造。</li>
   </ul>
