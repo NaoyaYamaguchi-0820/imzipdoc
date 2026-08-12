@@ -103,11 +103,11 @@
     <thead><tr><th>項目</th><th>説明</th></tr></thead>
     <tbody>
       <tr><td><code>definitionId</code></td><td>定義ID。フロー側から<code>key.type: "userDefinition"</code>として参照する場合、<code>key.id</code>にこの値を指定する（フロー定義編10.4節）</td></tr>
-      <tr><td><code>version</code></td><td>定義のバージョン</td></tr>
+      <tr><td><code>version</code></td><td>定義のバージョン。新規作成時の初期値は<code>1</code></td></tr>
       <tr><td><code>categoryId</code></td><td><code>userCategories</code>内の<code>categoryId</code>を参照</td></tr>
       <tr><td><code>definitionType</code></td><td>定義の処理種別。確認できているのは<code>"sql"</code>・<code>"javascript"</code>・<code>"rest"</code>（6〜8章）。他の値は9章参照</td></tr>
       <tr><td><code>definitionName</code></td><td>定義名（デザイナ上の表示名）</td></tr>
-      <tr><td><code>sortNumber</code></td><td>表示順</td></tr>
+      <tr><td><code>sortNumber</code></td><td>表示順。デザイナで新規作成した場合の既定値は、カテゴリが<code>0</code>、定義本体が<code>100</code></td></tr>
       <tr><td><code>definitionData.elementId</code></td><td>実処理を行う内部要素ID。<code>definitionType</code>ごとに固定値を取る（6〜8章）</td></tr>
       <tr><td><code>definitionData.elementProperties</code></td><td>内部要素固有の設定。<code>definitionType</code>ごとに構造が異なる（6〜8章）</td></tr>
       <tr><td><code>definitionData.inputDataDefinition</code> / <code>outputDataDefinition</code></td><td>この定義固有の入出力データ定義（構造はフロー定義編9章と同様）</td></tr>
