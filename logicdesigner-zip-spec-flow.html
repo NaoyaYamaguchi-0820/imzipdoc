@@ -284,7 +284,7 @@
       <tr><td><code>im_copyTo</code></td><td>ストレージ</td><td>ファイル・ディレクトリのコピー。<code>overwrite</code>を指定</td></tr>
       <tr><td><code>im_getFiles</code> / <code>im_removeStorage</code></td><td>ストレージ</td><td>ファイル一覧取得・削除。<code>recursive</code>を指定</td></tr>
       <tr><td><code>im_sendTextMail</code></td><td>ユーティリティ</td><td>テキストメール送信。<code>failOnError</code>を指定</td></tr>
-      <tr><td><code>im_chat</code></td><td>LLM連携（IM-Copilot）</td><td>チャット補完（LLMへの問い合わせ）を実行する。<code>continueOnError</code>を持つ。入力は<code>messages</code>（<code>role</code>/<code>content</code>を持つメッセージの配列。<code>contents</code>配列を使えばテキスト・画像を組み合わせたマルチモーダルメッセージも表現できる）と<code>option</code>（<code>model</code>・<code>maxTokens</code>・<code>stops</code>・<code>streaming</code>・<code>temprature</code>【原文ママ、スペルミスと見られる】・<code>topP</code>）。<code>option.model</code>に指定可能な値の全量は未確認（サンプルでは<code>gpt-4o-mini</code>を使用）</td></tr>
+      <tr><td><code>im_chat</code></td><td>LLM連携（IM-Copilot）</td><td>チャット補完（LLMへの問い合わせ）を実行する。<code>continueOnError</code>のほか、<code>continueOnOutputViolation</code>（出力違反時に処理を継続するか）を持つ場合がある（製品バージョンにより有無が異なると見られる。デザイナで開いた際に既定値<code>false</code>で自動付与されることを確認）。入力は<code>messages</code>（<code>role</code>/<code>content</code>を持つメッセージの配列。<code>contents</code>配列を使えばテキスト・画像を組み合わせたマルチモーダルメッセージも表現できる）と<code>option</code>（<code>model</code>・<code>maxTokens</code>・<code>stops</code>・<code>streaming</code>・<code>temprature</code>【原文ママ、スペルミスと見られる】・<code>topP</code>）。出力は<code>chatMessage</code>（<code>content</code>/<code>contents</code>/<code>role</code>を持つメッセージの配列）。<code>option.model</code>に指定可能な値の全量は未確認（サンプルでは<code>gpt-4o-mini</code>を使用）</td></tr>
       <tr><td><code>im_embedding</code></td><td>LLM連携（IM-Copilot）</td><td>テキストをベクトル埋め込みに変換する。<code>continueOnError</code>を持つ。入力<code>input</code>、出力<code>embeddings</code></td></tr>
       <tr><td><code>im_vectorDbSimilaritySearch</code></td><td>ベクトルDB（IM-Copilot）</td><td>ベクトル類似度検索。<code>continueOnError</code>を持つ。入力<code>embeddings</code>（ベクトル）・<code>category</code>（検索対象カテゴリ）</td></tr>
       <tr><td><code>im_vectorDbKeywordSearch</code></td><td>ベクトルDB（IM-Copilot）</td><td>キーワード検索。<code>continueOnError</code>を持つ。入力<code>category</code>・<code>keywords</code>（配列）</td></tr>
@@ -948,6 +948,10 @@
     <li>実行順を表す<code>im_sequence</code>要素を追加・更新し、前後の要素の<code>executeId</code>を<code>startPoint</code>/<code>endPoint</code>で正しく参照する</li>
     <li><code>additional.ui</code>の<code>graph.cells</code>（新規ノード＋関連する<code>link</code>）・<code>dataMap</code>・<code>optionMap</code>に対応エントリを追加する（<code>im_sequence</code>要素自体は<code>graph.cells</code>の<code>link</code>としてのみ表現し、<code>dataMap</code>・<code>optionMap</code>には追加しない。12.2節参照）。追加した要素が<code>mappingRules</code>を持つ場合は、<code>dataMap[uiNodeId].mapping.json</code>にも同じ内容を反映する（12.5節）</li>
   </ol>
+  <div class="alert alert-warning" role="alert">
+    <strong>陥りやすいミス: <code>mapping.json</code>の<code>target.path</code>を要素名プレフィックスと混同する</strong><br>
+    <code>mappingRules[].target</code>が<code>$output/&lt;name&gt;</code>・<code>$variable/&lt;name&gt;</code>のような特殊プレフィックスの場合、対応する<code>mapping.json</code>の<code>connectors[].target.path</code>は、あくまで<code>mappingRules</code>側の<code>target</code>文字列（<code>"$output/chatMessage"</code>等）のスラッシュをタブに置き換えた値（<code>"$output\tchatMessage"</code>）にする（12.5.1節）。他要素のプロパティへ設定する場合の<code>"&lt;executeId&gt;\t&lt;プロパティ名&gt;"</code>という形式（12.2節の例）と混同し、<code>"im_end1\tchatMessage"</code>のように誤って要素の<code>executeId</code>をプレフィックスに使ってしまうと、インポート自体は成功するが、デザイナ上ではマッピングが実際には結線されず「参照候補が残っているだけ」の状態に見える（実機で確認した失敗例）。
+  </div>
 
   <h3 class="h4 mt-4">18.5 生成後セルフチェックリスト</h3>
   <p>ZIP化する前に、生成した<code>flow_definition.json</code>（二重エンコード前の状態）に対して確認する。</p>
